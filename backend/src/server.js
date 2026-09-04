@@ -7,6 +7,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const partidaRoutes = require('./routes/partidaRoutes');
+// ... logo abaixo das outras rotas (como equipes ou jogadores):
+app.use('/api/partidas', partidaRoutes);
+
+const estatisticaRoutes = require('./routes/estatisticaRoutes');
+app.use('/api/estatisticas', estatisticaRoutes);
+
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api/dashboard', dashboardRoutes);
+
 const pool = new Pool({
     user: process.env.DB_USER || 'postgres',
     host: process.env.DB_HOST || 'localhost',

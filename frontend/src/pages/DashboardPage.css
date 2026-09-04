@@ -1,0 +1,101 @@
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  color: #fff;
+}
+
+.dashboard-container h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.metric-card {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  border: 1px solid #374151;
+  padding: 20px;
+  border-radius: 14px;
+  text-align: center;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+}
+
+.metric-card span {
+  display: block;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.metric-card h3 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.section-ranking {
+  background: #111827;
+  border: 1px solid #1f2937;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+}
+
+.section-ranking h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #38bdf8;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+}
+
+.tabela-wrapper {
+  overflow-x: auto;
+}
+
+.tabela-dashboard {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tabela-dashboard th {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  padding: 12px 10px;
+  border-bottom: 1px solid #1f2937;
+}
+
+.tabela-dashboard td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #1f2937;
+  font-size: 0.95rem;
+}
+
+.badge-pos {
+  background: #fbbf24;
+  color: #030712;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.empty-text {
+  color: #64748b;
+  margin: 0;
+}

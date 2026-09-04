@@ -1,0 +1,158 @@
+.relatorio-ia-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  color: #fff;
+}
+
+.relatorio-ia-container h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+}
+
+.subtitulo {
+  color: #94a3b8;
+  margin: -15px 0 10px 0;
+  font-size: 0.95rem;
+}
+
+.card-seletor {
+  background: #111827;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-seletor label {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.card-seletor select {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid #374151;
+  background: #030712;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.dossie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.dossie-card {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  border: 1px solid #374151;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-header-ai {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.badge-tendencia {
+  background: #064e3b;
+  color: #34d399;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.texto-parecer {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  margin: 0;
+  font-style: italic;
+}
+
+.card-forte h3 {
+  color: #4ade80;
+  margin-top: 0;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+}
+
+.card-fraco h3 {
+  color: #f87171;
+  margin-top: 0;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+}
+
+.dossie-card ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #cbd5e1;
+}
+
+.dossie-card li {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.perfil-box {
+  text-align: center;
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+  border: 1px solid #312e81;
+}
+
+.perfil-box h3 {
+  color: #fbbf24;
+  margin-top: 0;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+}
+
+.tag-perfil {
+  display: inline-block;
+  background: #fbbf24;
+  color: #090d16;
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 6px 16px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  margin: 10px 0;
+}
+
+.sub-perfil {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 5px 0 0 0;
+}
+
+.aviso-vazio {
+  background: #111827;
+  padding: 40px;
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  text-align: center;
+  color: #64748b;
+  font-size: 1rem;
+}
