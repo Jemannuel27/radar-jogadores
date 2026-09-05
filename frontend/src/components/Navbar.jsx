@@ -1,35 +1,42 @@
-function Navbar({ usuario, onLogout }) {
-  return (
-    <nav style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '15px 30px',
-      backgroundColor: '#1e293b',
-      color: '#fff',
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-      gap: '20px',
-      flexWrap: 'wrap'
-    }}>
-      <h2 style={{ margin: 0, fontSize: '1.25rem' }}>⚽ Radar de Jogadores</h2>
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <a href="#" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500' }}>Início</a>
-        <a href="#" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500' }}>Jogadores</a>
-        <a href="#" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500' }}>Equipes</a>
-        <span style={{ color: '#64748b' }}>|</span>
-        <span style={{ color: '#38bdf8', fontWeight: '700' }}>Olá, {usuario?.nome}</span>
-        <button
-          onClick={onLogout}
-          style={{
-            background: '#7f1d1d', color: '#fecaca', border: '1px solid #991b1b',
-            padding: '7px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: '800'
-          }}
-        >
-          SAIR
-        </button>
-      </div>
-    </nav>
-  );
-}
+import React from 'react';
 
-export default Navbar;
+export default function Navbar({ abaAtiva, setAbaAtiva }) {
+    const botoes = [
+        { id: 'plantel', label: '🛡️ GESTÃO DE PLANTEL' },
+        { id: 'partidas', label: '⚽ GESTÃO DE PARTIDAS' },
+        { id: 'dashboard', label: '📊 DASHBOARD' },
+        { id: 'comparar', label: '⚔️ COMPARAR ATLETAS' },
+        { id: 'ia', label: '🤖 IA & RELATÓRIOS' },
+    ];
+
+    return (
+        <nav style={{
+            display: 'flex',
+            gap: '10px',
+            backgroundColor: '#0b0f19',
+            padding: '15px 20px',
+            justifyContent: 'center',
+            borderBottom: '1px solid #1e293b'
+        }}>
+            {botoes.map(btn => (
+                <button
+                    key={btn.id}
+                    onClick={() => setAbaAtiva(btn.id)}
+                    style={{
+                        backgroundColor: abaAtiva === btn.id ? '#0284c7' : '#1e293b',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '10px 18px',
+                        borderRadius: '8px',
+                        fontWeight: '700',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out'
+                    }}
+                >
+                    {btn.label}
+                </button>
+            ))}
+        </nav>
+    );
+}

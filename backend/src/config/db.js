@@ -1,13 +1,12 @@
 const { Pool } = require('pg');
+require('dotenv').config();
 
-// Configuração da conexão com o PostgreSQL
-// (Ajuste a senha e o usuário de acordo com o que você configurou no seu computador)
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'radar_jogadores',
-    password: 'jemannuel10', 
-    port: 5432,
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'radar_jogadores',
+  password: process.env.DB_PASSWORD || 'postgres',
+  port: process.env.DB_PORT || 5432,
 });
 
 module.exports = pool;
