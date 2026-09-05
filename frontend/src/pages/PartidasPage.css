@@ -1,84 +1,307 @@
 .partidas-container {
-  background: #111827;
-  padding: 30px;
-  border-radius: 16px;
-  border: 1px solid #1f2937;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
-  color: #fff;
-  max-width: 600px;
-  margin: 0 auto;
+  width: 100%;
+  color: #ffffff;
+  background-color: #0b0d17;
 }
 
-.partidas-container h2 {
-  margin-top: 0;
-  color: #38bdf8;
-  font-size: 1.5rem;
-  text-transform: uppercase;
+.loading-container {
+  text-align: center;
+  padding: 4rem;
+  color: #00d4ff;
+  font-weight: bold;
+}
+
+/* Hero Banner */
+.hero-banner {
+  background: linear-gradient(135deg, #13182e 0%, #0a0d1b 100%);
+  border: 1px solid #21294d;
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.badge-tag {
+  background-color: #ffb703;
+  color: #000;
+  font-weight: 800;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
   letter-spacing: 0.5px;
-  margin-bottom: 20px;
 }
 
-.partida-form {
+.hero-banner h1 {
+  margin: 0.5rem 0 0.3rem 0;
+  font-size: 2.2rem;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.hero-banner p {
+  color: #8f9bba;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1rem 1.8rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-card h2 {
+  margin: 0;
+  color: #00d4ff;
+  font-size: 1.8rem;
+}
+
+.stat-card span {
+  font-size: 0.75rem;
+  color: #8f9bba;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* Cards e Seções */
+.card-section {
+  background: #101426;
+  border: 1px solid #1c2340;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.card-section h3 {
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  color: #ffb703;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+/* Form Estilizado */
+.fut-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.2rem;
+  align-items: flex-end;
+}
+
+.form-group {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 0.4rem;
 }
 
-.partida-form label {
-  font-size: 0.9rem;
-  color: #94a3b8;
-  font-weight: 600;
+.form-group label {
+  font-size: 0.8rem;
+  color: #8f9bba;
+  font-weight: bold;
 }
 
-.partida-form input,
-.partida-form select {
-  width: 100%;
-  padding: 12px 15px;
-  border-radius: 10px;
-  border: 1px solid #374151;
-  background: #030712;
-  color: #fff;
-  font-size: 0.95rem;
+.row-score {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.row-score > div {
+  flex: 1;
+}
+
+.fut-form input, .fut-form select, .filter-grid input, .filter-grid select {
+  background: #070912;
+  border: 1px solid #21294a;
+  color: #ffffff;
+  padding: 0.75rem;
+  border-radius: 6px;
   outline: none;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-.placar-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  background: #1f2937;
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px solid #374151;
-}
-
-.btn-salvar {
-  background-color: #0284c7;
-  color: #fff;
-  border: none;
-  padding: 14px;
-  border-radius: 10px;
-  font-weight: 800;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 1.1rem;
-  transition: background 0.2s;
-  margin-top: 10px;
-}
-
-.btn-salvar:hover {
-  background-color: #0369a1;
-}
-
-.mensagem {
-  background: #1e3a8a;
-  color: #93c5fd;
-  padding: 10px;
-  border-radius: 8px;
   font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.fut-form input:focus, .fut-form select:focus, .filter-grid input:focus, .filter-grid select:focus {
+  border-color: #00d4ff;
+}
+
+.form-buttons {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #0088cc 0%, #00d4ff 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 0.8rem 1.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+.btn-secondary {
+  background: #252d4a;
+  border: none;
+  color: #ffffff;
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Filtros */
+.filter-section {
+  border-left: 4px solid #00d4ff;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #ffb703;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.filter-grid label {
+  display: block;
+  font-size: 0.75rem;
+  color: #8f9bba;
+  margin-bottom: 0.4rem;
+  font-weight: bold;
+}
+
+/* Tabela e Resultados */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.fut-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fut-table th, .fut-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #1c223c;
+  font-size: 0.9rem;
+}
+
+.fut-table th {
+  color: #8f9bba;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  background: #0d101f;
+}
+
+.fut-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.team-name {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.score-cell {
+  font-weight: 800;
+  color: #00d4ff;
+  font-size: 1.1rem;
   text-align: center;
-  font-weight: 600;
+  background: rgba(0, 212, 255, 0.05);
+  border-radius: 4px;
+}
+
+.location-tag {
+  background: #19203b;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #c0cbfa;
+}
+
+.status-badge {
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.status-badge.agendada {
+  background: rgba(255, 183, 3, 0.15);
+  color: #ffb703;
+  border: 1px solid rgba(255, 183, 3, 0.4);
+}
+
+.status-badge.em-andamento {
+  background: rgba(0, 212, 255, 0.15);
+  color: #00d4ff;
+  border: 1px solid rgba(0, 212, 255, 0.4);
+}
+
+.status-badge.finalizada {
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.4);
+}
+
+.btn-action {
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
+}
+
+.btn-action.edit {
+  background: #ffb703;
+  color: #000;
+}
+
+.btn-action.delete {
+  background: #e63946;
+  color: #fff;
+}
+
+.empty-box {
+  text-align: center;
+  padding: 3rem;
+  color: #6a789c;
+  background: #070912;
+  border-radius: 8px;
+}
+
+.error-badge {
+  background: #e63946;
+  color: #fff;
+  padding: 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
 }

@@ -1,20 +1,15 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+import axios from 'axios';
 
-export const api = {
-    // Exemplo de chamadas genéricas
-    async get(endpoint) {
-        const res = await fetch(`${API_BASE_URL}${endpoint}`);
-        if (!res.ok) throw new Error(`Erro HTTP: ${res.status}`);
-        return res.json();
-    },
+export const api = axios.create({
+  baseURL: 'http://localhost:3000',
+});
 
-    async post(endpoint, body) {
-        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-        if (!res.ok) throw new Error(`Erro HTTP: ${res.status}`);
-        return res.json();
-    }
-};
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});

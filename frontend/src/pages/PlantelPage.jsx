@@ -1,255 +1,286 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 
-export default function PlantelPage({ token, jogadores, equipes, carregarDados }) {
-  const [nome, setNome] = useState('');
-  const [posicao, setPosicao] = useState('');
-  const [idade, setIdade] = useState('');
-  const [equipeId, setEquipeId] = useState('');
+export function PlantelPage() {
+  const [jogadores, setJogadores] = useState([]);
+  const [equipes, setEquipes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState('');
 
-  const [nomeEquipe, setNomeEquipe] = useState('');
-  const [cidadeEquipe, setCidadeEquipe] = useState('');
+  // Formulário de Jogador
+  const [formJogador, setFormJogador] = useState({
+    nome: '',
+    posicao: '',
+    idade: '',
+    equipe_id: ''
+  });
 
-  const handleCadastrarJogador = (e) => {
+  // Formulário de Clube/Equipe
+  const [formClube, setFormClube] = useState({
+    nome: '',
+    cidade: ''
+  });
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    setLoading(true);
+    setErro('');
+    try {
+      const [resJogadores, resEquipes] = await Promise.allSettled([
+        api.get('/jogadores'),
+        api.get('/equipes')
+      ]);
+
+      if (resJogadores.status === 'fulfilled' && Array.isArray(resJogadores.value.data)) {
+        setJogadores(resJogadores.value.data);
+      } else {
+        setJogadores([]);
+      }
+
+      if (resEquipes.status === 'fulfilled' && Array.isArray(resEquipes.value.data)) {
+        setEquipes(resEquipes.value.data);
+      } else {
+        setEquipes([]);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+      setErro('Erro ao conectar com o servidor.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateClube = async (e) => {
     e.preventDefault();
-    fetch('http://localhost:3000/jogadores', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        nome,
-        posicao,
-        idade: Number(idade),
-        equipe_id: equipeId ? Number(equipeId) : null
-      })
-    })
-      .then(() => {
-        setNome('');
-        setPosicao('');
-        setIdade('');
-        setEquipeId('');
-        carregarDados();
-      })
-      .catch((err) => console.error('Erro ao cadastrar jogador:', err));
+    try {
+      await api.post('/equipes', formClube);
+      setFormClube({ nome: '', cidade: '' });
+      carregarDados();
+    } catch (err) {
+      console.error('Erro ao criar clube:', err);
+      alert('Erro ao cadastrar clube.');
+    }
   };
 
-  const handleCadastrarEquipe = (e) => {
+  const handleCreateJogador = async (e) => {
     e.preventDefault();
-    fetch('http://localhost:3000/equipes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ nome: nomeEquipe, cidade: cidadeEquipe })
-    })
-      .then(() => {
-        setNomeEquipe('');
-        setCidadeEquipe('');
-        carregarDados();
-      })
-      .catch((err) => console.error('Erro ao cadastrar equipe:', err));
+    try {
+      await api.post('/jogadores', formJogador);
+      setFormJogador({ nome: '', posicao: '', idade: '', equipe_id: '' });
+      carregarDados();
+    } catch (err) {
+      console.error('Erro ao contratar atleta:', err);
+      alert('Erro ao cadastrar jogador.');
+    }
   };
 
-  const excluirJogador = (id) => {
-    if (!window.confirm('Deseja liberar este atleta do plantel?')) return;
-    fetch(`http://localhost:3000/jogadores/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-      .then(() => carregarDados())
-      .catch((err) => console.error('Erro ao excluir:', err));
-  };
+  if (loading) {
+    return (
+      <div style={{ color: '#fff', textAlign: 'center', padding: '3rem' }}>
+        <h2>Carregando plantel...</h2>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {/* Header estilo EA Sports / FUT */}
-      <div style={{ 
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)', 
-        padding: '30px', 
-        borderRadius: '16px', 
-        border: '1px solid #312e81', 
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-        marginBottom: '35px',
+    <div style={{ color: '#fff' }}>
+      {/* Banner Principal */}
+      <div style={{
+        backgroundColor: '#13182e',
+        border: '1px solid #252d54',
+        borderRadius: '12px',
+        padding: '2rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '20px'
+        marginBottom: '2rem'
       }}>
         <div>
-          <div style={{ display: 'inline-block', background: '#fbbf24', color: '#090d16', fontWeight: '900', fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px', letterSpacing: '1px', marginBottom: '8px' }}>
+          <span style={{
+            backgroundColor: '#ffb703',
+            color: '#000',
+            fontWeight: 'bold',
+            fontSize: '0.75rem',
+            padding: '0.2rem 0.6rem',
+            borderRadius: '4px'
+          }}>
             ULTIMATE SCOUT 26
-          </div>
-          <h1 style={{ fontSize: '2.5rem', margin: '0 0 5px 0', color: '#fff', fontWeight: '900', letterSpacing: '-1px', textTransform: 'uppercase' }}>
-            Radar de Jogadores
+          </span>
+          <h1 style={{ margin: '0.5rem 0', fontSize: '2.2rem', letterSpacing: '1px' }}>
+            RADAR DE JOGADORES
           </h1>
-          <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0, fontFamily: 'Inter, sans-serif' }}>
+          <p style={{ color: '#8f9bba', margin: 0 }}>
             Gerencie seu plantel, contrate novos talentos e domine o campeonato.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <div style={{ background: '#1e293b', padding: '15px 25px', borderRadius: '12px', border: '1px solid #334155', textAlign: 'center' }}>
-            <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: '800', color: '#fbbf24' }}>{jogadores.length}</span>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif' }}>Atletas</span>
+
+        {/* Contadores - Protegidos contra undefined */}
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            padding: '1rem 1.5rem',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ margin: 0, color: '#00d4ff', fontSize: '1.8rem' }}>
+              {(jogadores && jogadores.length) || 0}
+            </h2>
+            <span style={{ fontSize: '0.75rem', color: '#8f9bba', fontWeight: 'bold' }}>ATLETAS</span>
           </div>
-          <div style={{ background: '#1e293b', padding: '15px 25px', borderRadius: '12px', border: '1px solid #334155', textAlign: 'center' }}>
-            <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: '800', color: '#38bdf8' }}>{equipes.length}</span>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif' }}>Equipes</span>
+
+          <div style={{
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            padding: '1rem 1.5rem',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ margin: 0, color: '#00d4ff', fontSize: '1.8rem' }}>
+              {(equipes && equipes.length) || 0}
+            </h2>
+            <span style={{ fontSize: '0.75rem', color: '#8f9bba', fontWeight: 'bold' }}>EQUIPES</span>
           </div>
         </div>
       </div>
 
-      {/* Grid de Cadastros */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '25px', marginBottom: '40px' }}>
-        
-        {/* Card Form: Equipe */}
-        <div style={{ background: '#111827', padding: '25px', borderRadius: '16px', border: '1px solid #1f2937', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}>
-          <h3 style={{ marginTop: 0, color: '#38bdf8', fontSize: '1.4rem', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            🛡️ Cadastro de Clube
-          </h3>
-          <form onSubmit={handleCadastrarEquipe} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
-            <input 
-              type="text" placeholder="Nome do Clube (ex: Real Madrid)" value={nomeEquipe} 
-              onChange={(e) => setNomeEquipe(e.target.value)} required 
-              style={{ width: '100%', padding: '12px 15px', borderRadius: '10px', border: '1px solid #374151', background: '#030712', color: '#fff', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }}
+      {erro && (
+        <div style={{ backgroundColor: '#e63946', color: '#fff', padding: '0.8rem', borderRadius: '6px', marginBottom: '1.5rem' }}>
+          {erro}
+        </div>
+      )}
+
+      {/* Seção de Formulários */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* Card: Cadastro de Clube */}
+        <div style={{ backgroundColor: '#101426', border: '1px solid #1c2340', borderRadius: '10px', padding: '1.5rem' }}>
+          <h3 style={{ color: '#00d4ff', marginTop: 0, fontSize: '1.1rem' }}>🛡️ CADASTRO DE CLUBE</h3>
+          <form onSubmit={handleCreateClube} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <input
+              type="text"
+              placeholder="Nome do Clube (ex: Real Madrid)"
+              value={formClube.nome}
+              onChange={(e) => setFormClube({ ...formClube, nome: e.target.value })}
+              required
+              style={inputStyle}
             />
-            <input 
-              type="text" placeholder="Cidade / Sede" value={cidadeEquipe} 
-              onChange={(e) => setCidadeEquipe(e.target.value)} 
-              style={{ width: '100%', padding: '12px 15px', borderRadius: '10px', border: '1px solid #374151', background: '#030712', color: '#fff', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }}
+            <input
+              type="text"
+              placeholder="Cidade / Sede"
+              value={formClube.cidade}
+              onChange={(e) => setFormClube({ ...formClube, cidade: e.target.value })}
+              style={inputStyle}
             />
-            <button type="submit" style={{ backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px', transition: 'background 0.2s', fontSize: '1.1rem' }}>
-              Criar Clube
-            </button>
+            <button type="submit" style={btnPrimaryStyle}>CRIAR CLUBE</button>
           </form>
         </div>
 
-        {/* Card Form: Jogador */}
-        <div style={{ background: '#111827', padding: '25px', borderRadius: '16px', border: '1px solid #1f2937', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}>
-          <h3 style={{ marginTop: 0, color: '#fbbf24', fontSize: '1.4rem', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            ⭐ Contratar Atleta
-          </h3>
-          <form onSubmit={handleCadastrarJogador} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '15px' }}>
-            <input 
-              type="text" placeholder="Nome do Jogador" value={nome} 
-              onChange={(e) => setNome(e.target.value)} required 
-              style={{ width: '100%', padding: '11px 15px', borderRadius: '10px', border: '1px solid #374151', background: '#030712', color: '#fff', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }}
+        {/* Card: Contratar Atleta */}
+        <div style={{ backgroundColor: '#101426', border: '1px solid #1c2340', borderRadius: '10px', padding: '1.5rem' }}>
+          <h3 style={{ color: '#ffb703', marginTop: 0, fontSize: '1.1rem' }}>⭐ CONTRATAR ATLETA</h3>
+          <form onSubmit={handleCreateJogador} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <input
+              type="text"
+              placeholder="Nome do Jogador"
+              value={formJogador.nome}
+              onChange={(e) => setFormJogador({ ...formJogador, nome: e.target.value })}
+              required
+              style={inputStyle}
             />
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', width: '100%' }}>
-              <input 
-                type="text" placeholder="Posição (ex: ATA)" value={posicao} 
-                onChange={(e) => setPosicao(e.target.value)} required 
-                style={{ width: '100%', padding: '11px 15px', borderRadius: '10px', border: '1px solid #374151', background: '#030712', color: '#fff', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }}
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <input
+                type="text"
+                placeholder="Posição (ex: ATA)"
+                value={formJogador.posicao}
+                onChange={(e) => setFormJogador({ ...formJogador, posicao: e.target.value })}
+                style={{ ...inputStyle, flex: 1 }}
               />
-              <input 
-                type="number" placeholder="Idade" value={idade} 
-                onChange={(e) => setIdade(e.target.value)} required 
-                style={{ width: '100%', padding: '11px 15px', borderRadius: '10px', border: '1px solid #374151', background: '#030712', color: '#fff', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }}
+              <input
+                type="number"
+                placeholder="Idade"
+                value={formJogador.idade}
+                onChange={(e) => setFormJogador({ ...formJogador, idade: e.target.value })}
+                style={{ ...inputStyle, width: '100px' }}
               />
             </div>
-
-            <select 
-              value={equipeId} onChange={(e) => setEquipeId(e.target.value)}
-              style={{ width: '100%', padding: '11px 15px', borderRadius: '10px', border: '1px solid #374151', background: '#030712', color: '#fff', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }}
+            <select
+              value={formJogador.equipe_id}
+              onChange={(e) => setFormJogador({ ...formJogador, equipe_id: e.target.value })}
+              style={inputStyle}
             >
               <option value="">Vincular a um Clube (Opcional)</option>
-              {equipes.map((eq) => (
+              {equipes && equipes.map((eq) => (
                 <option key={eq.id} value={eq.id}>{eq.nome}</option>
               ))}
             </select>
-            
-            <button type="submit" style={{ backgroundColor: '#d97706', color: '#fff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '2px', fontSize: '1.1rem' }}>
-              Assinar Contrato
-            </button>
+            <button type="submit" style={btnOrangeStyle}>ASSINAR CONTRATO</button>
           </form>
         </div>
-
       </div>
 
-      {/* Listagem de Atletas */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, color: '#fff', fontSize: '1.6rem', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
-            Plantel Escoteiro
-          </h3>
-          <span style={{ fontSize: '0.85rem', color: '#64748b', fontFamily: 'Inter, sans-serif' }}>Exibindo todos os registros do banco</span>
+      {/* Seção: Lista / Plantel */}
+      <div style={{ backgroundColor: '#101426', border: '1px solid #1c2340', borderRadius: '10px', padding: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0, letterSpacing: '1px' }}>PLANTEL ESCOTEIRO</h3>
+          <span style={{ color: '#8f9bba', fontSize: '0.85rem' }}>Exibindo todos os registros do banco</span>
         </div>
 
-        {jogadores.length === 0 ? (
-          <div style={{ background: '#111827', padding: '40px', borderRadius: '16px', border: '1px solid #1f2937', textAlign: 'center' }}>
-            <p style={{ color: '#64748b', fontSize: '1.05rem', margin: 0, fontFamily: 'Inter, sans-serif' }}>Nenhum atleta contratado no momento. Use o formulário acima para adicionar.</p>
+        {(!jogadores || jogadores.length === 0) ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#6a789c', backgroundColor: '#0b0e1b', borderRadius: '8px' }}>
+            Nenhum atleta contratado no momento. Use o formulário acima para adicionar.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
             {jogadores.map((j) => (
-              <div key={j.id} style={{ 
-                background: 'linear-gradient(180deg, #1f2937 0%, #111827 100%)', 
-                borderRadius: '14px', 
-                border: '1px solid #374151', 
-                padding: '20px',
-                position: 'relative',
-                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.4)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
+              <div key={j.id} style={{
+                backgroundColor: '#0b0e1b',
+                border: '1px solid #1f2747',
+                padding: '1rem',
+                borderRadius: '8px'
               }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <span style={{ 
-                      background: '#fbbf24', 
-                      color: '#030712', 
-                      fontWeight: '900', 
-                      fontSize: '0.8rem', 
-                      padding: '4px 8px', 
-                      borderRadius: '6px',
-                      textTransform: 'uppercase' 
-                    }}>
-                      {j.posicao}
-                    </span>
-                    <span style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'Inter, sans-serif' }}>
-                      {j.idade} anos
-                    </span>
-                  </div>
-
-                  <h4 style={{ color: '#fff', fontSize: '1.3rem', margin: '0 0 8px 0', fontWeight: '800', lineHeight: '1.2' }}>
-                    {j.nome}
-                  </h4>
-
-                  <div style={{ marginBottom: '20px' }}>
-                    <span style={{ 
-                      display: 'inline-block',
-                      background: '#030712', 
-                      color: '#38bdf8', 
-                      border: '1px solid #1e3a8a', 
-                      padding: '4px 10px', 
-                      borderRadius: '6px', 
-                      fontSize: '0.75rem', 
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
-                      {j.equipe_nome ? j.equipe_nome : 'Agente Livre'}
-                    </span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => excluirJogador(j.id)}
-                  style={{ 
-                    backgroundColor: '#7f1d1d', 
-                    color: '#fca5a5', 
-                    border: '1px solid #991b1b', 
-                    padding: '8px', 
-                    borderRadius: '8px', 
-                    cursor: 'pointer', 
-                    fontSize: '0.8rem', 
-                    fontWeight: '800', 
-                    width: '100%', 
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Dispensar Atleta
-                </button>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#ffb703' }}>{j.nome}</h4>
+                <p style={{ margin: '0.2rem 0', color: '#8f9bba', fontSize: '0.9rem' }}>Posição: {j.posicao || 'N/I'}</p>
+                <p style={{ margin: '0.2rem 0', color: '#8f9bba', fontSize: '0.9rem' }}>Idade: {j.idade || 'N/I'}</p>
+                <p style={{ margin: '0.2rem 0', color: '#00d4ff', fontSize: '0.9rem' }}>Clube: {j.equipe_nome || 'Livre'}</p>
               </div>
             ))}
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
+
+const inputStyle = {
+  backgroundColor: '#070912',
+  border: '1px solid #21294a',
+  color: '#fff',
+  padding: '0.75rem',
+  borderRadius: '6px',
+  outline: 'none'
+};
+
+const btnPrimaryStyle = {
+  backgroundColor: '#0088cc',
+  color: '#fff',
+  border: 'none',
+  padding: '0.8rem',
+  borderRadius: '6px',
+  fontWeight: 'bold',
+  cursor: 'pointer'
+};
+
+const btnOrangeStyle = {
+  backgroundColor: '#e67e22',
+  color: '#fff',
+  border: 'none',
+  padding: '0.8rem',
+  borderRadius: '6px',
+  fontWeight: 'bold',
+  cursor: 'pointer'
+};
+
+export default PlantelPage;

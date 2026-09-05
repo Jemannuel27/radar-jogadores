@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const jogadorController = require('../controllers/jogadorController');
-const authMiddleware = require('../middlewares/authMiddleware');
+const { autenticarToken } = require('../middlewares/authMiddleware'); // Certifique-se do caminho correto
 
-router.use(authMiddleware);
+// Se você usa o middleware de autenticação, passe-o antes do controller
+// Caso queira testar sem o middleware primeiro, você pode remover 'autenticarToken' das rotas
 
-router.get('/', jogadorController.listarJogadores);
-router.post('/', jogadorController.cadastrarJogador);
-router.delete('/:id', jogadorController.excluirJogador);
+router.get('/', autenticarToken, jogadorController.listarJogadores);
+router.post('/', autenticarToken, jogadorController.criarJogador);
+router.put('/:id', autenticarToken, jogadorController.atualizarJogador);
+router.delete('/:id', autenticarToken, jogadorController.deletarJogador);
 
 module.exports = router;

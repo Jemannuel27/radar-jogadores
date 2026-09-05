@@ -1,13 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    gerarParecerTecnicoIA, 
-    listarJogadoresParaIa, 
-    compararAtletasIA 
-} = require('../controllers/iaController');
+const iaController = require('../controllers/iaController');
 
-router.get('/jogadores', listarJogadoresParaIa);
-router.get('/parecer/:id', gerarParecerTecnicoIA);
-router.get('/comparar', compararAtletasIA);
+// Rotas ajustadas para bater exatamente com o que o front-end chama
+router.get('/historico', iaController.listarRelatorios);
+router.post('/comparar', iaController.gerarRelatorio);
 
 module.exports = router;
