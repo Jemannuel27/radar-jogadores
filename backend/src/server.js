@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const crypto = require('crypto');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,9 @@ app.use('/api/estatisticas', estatisticaRoutes);
 
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/dashboard', dashboardRoutes);
+
+const iaRoutes = require('./routes/iaRoutes');
+app.use('/api/ia', iaRoutes);
 
 const pool = new Pool({
     user: process.env.DB_USER || 'postgres',

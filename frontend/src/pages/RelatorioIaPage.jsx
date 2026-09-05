@@ -1,157 +1,316 @@
 import React, { useState, useEffect } from 'react';
-import './RelatorioIaPage.css';
 
-export default function RelatorioIaPage({ token }) {
-  const [atletas, setAtletas] = useState([]);
-  const [atletaSelecionadoId, setAtletaSelecionadoId] = useState('');
-  const [historicoAtleta, setHistoricoAtleta] = useState([]);
-  const [carregando, setCarregando] = useState(false);
+export default function RelatorioIaPage() {
+    const [jogadores, setJogadores] = useState([]);
+    const [jogadorSelecionadoId, setJogadorSelecionadoId] = useState('');
+    const [relatorio, setRelatorio] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [loadingJogadores, setLoadingJogadores] = useState(true);
+    const [erro, setErro] = useState(null);
 
-  // Carregar lista de atletas consolidados
-  useEffect(() => {
-    if (!token) return;
-    fetch('http://localhost:3000/api/dashboard/atletas', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setAtletas(Array.isArray(data) ? data : []))
-      .catch(err => console.error('Erro ao carregar atletas:', err));
-  }, [token]);
+    // Carrega a lista de jogadores cadastrados no banco de dados ao abrir a página
+    useEffect(() => {
+        const buscarJogadores = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/ia/jogadores');
+                if (!response.ok) throw new Error("Falha ao carregar lista de jogadores.");
+                const data = await response.json();
+                setJogadores(data);
+                if (data.length > 0) {
+                    setJogadorSelecionadoId(data[0].id); // Seleciona o primeiro por padrão
+                }
+            } catch (err) {
+                console.error("Erro ao buscar jogadores:", err);
+                setErro("Não foi possível carregar a lista de atletas.");
+            } finally {
+                setLoadingJogadores(false);
+            }
+        };
 
-  const atletaAtual = atletas.find(a => String(a.jogador_id) === String(atletaSelecionadoId));
+        buscarJogadores();
+    }, []);
 
-  // Função para gerar os insights de IA baseados nas estatísticas reais
-  const gerarAnaliseInteligente = (atleta) => {
-    if (!atleta) return null;
+    const gerarRelatorio = async () => {
+        if (!jogadorSelecionadoId) {
+            setErro("Selecione um jogador primeiro.");
+            return;
+        }
 
-    const jogos = Number(atleta.jogos_disputados) || 0;
-    if (jogos === 0) {
-      return {
-        perfil: "Atleta sem partidas registradas",
-        fortes: ["Aguardando dados de scout"],
-        fracos: ["Aguardando dados de scout"],
-        tendencia: "Neutra",
-        relatorio: `O atleta ${atleta.nome} (${atleta.posicao}) ainda não possui partidas finalizadas registradas no sistema. Recomenda-se lançar o scout nas próximas partidas para ativar as análises preditivas.`
-      };
-    }
+        setLoading(true);
+        setErro(null);
 
-    const mediaGols = (Number(atleta.total_gols) / jogos).toFixed(2);
-    const mediaAst = (Number(atleta.total_assistencias) / jogos).toFixed(2);
-    const mediaDes = (Number(atleta.total_desarmes) / jogos).toFixed(2);
-    const totalCartoes = Number(atleta.total_amarelos) + Number(atleta.total_vermelhos);
+        try {
+            const response = await fetch(`http://localhost:3000/api/ia/parecer/${jogadorSelecionadoId}`);
+            
+            if (!response.ok) {
+                throw new Error("Erro ao buscar parecer da IA.");
+            }
 
-    // Identificação de pontos fortes e fracos lógicos
-    let fortes = [];
-    let fracos = [];
-    let perfil = "";
+            const data = await response.json();
+            setRelatorio(data);
 
-    if (Number(mediaGols) >= 0.5) {
-      fortes.push("Alto poder de finalização e presença de área");
-      perfil = "Ativo Ofensivo / Artilheiro";
-    } else {
-      fortes.push("Consistência na participação tática");
-      perfil = "Atleta de Composição de Elenco";
-    }
+        } catch (err) {
+            console.error("Erro na requisição:", err);
+            setErro(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    if (Number(mediaAst) >= 0.4) {
-      fortes.push("Excelente visão de jogo e facilidade para criar assistências");
-    } else {
-      fracos.push("Baixa incidência de passes decisivos/assistências");
-    }
+    const baixarRelatorio = () => {
+        if (!relatorio) return;
 
-    if (Number(mediaDes) >= 1.5) {
-      fortes.push("Forte combatividade defensiva e alto volume de desarmes");
-    } else {
-      fracos.push("Participação defensiva e recuperação de bola abaixo da média da posição");
-    }
+        const jogadorAtual = jogadores.find(j => String(j.id) === String(jogadorSelecionadoId));
+        const nomeAtleta = jogadorAtual ? jogadorAtual.nome : 'Atleta';
 
-    if (totalCartoes / jogos > 0.5) {
-      fracos.push("Índice elevado de cartões (disciplina requer atenção)");
-    } else {
-      fortes.push("Boa disciplina tática em campo (baixo índice de cartões)");
-    }
+        const conteudoTxt = `
+================================================================
+                    RELATÓRIO DE SCOUT - IA
+================================================================
+ATLETA: ${nomeAtleta.toUpperCase()}
+================================================================
 
-   // Tendência simulada baseada em volume
-    const tendencia = jogos >= 3 ? "Em Ascensão (Estável)" : "Em Avaliação Inicial";
+PERFIL TÁTICO:
+${relatorio.classificacaoPerfil?.toUpperCase() || 'N/A'}
 
-    // Relatório automático em linguagem natural (Estilo Parecer de Scout Profissional)
-    const relatorio = `Parecer Técnico Automatizado (Scout IA): O atleta ${atleta.nome}, atuando como ${atleta.posicao}, disputou ${jogos} partidas oficiais no sistema. Apresenta uma média de ${mediaGols} gols e ${mediaAst} assistências por jogo, evidenciando ${Number(mediaGols) >= 0.4 ? 'alta periculosidade no terço final' : 'papel focado na construção e equilíbrio'}. Defensivamente, registra ${mediaDes} desarmes por partida. ${totalCartoes > 2 ? 'Nota de alerta para o controle disciplinar devido ao acúmulo de cartões.' : 'Excelente controle disciplinar mantido.'} Conclusão: Atleta recomendado para manutenção no time titular com foco em treinos específicos de ${fracos[0] || 'aprimoramento físico'}.`;
+TENDÊNCIA DE DESEMPENHO:
+${relatorio.tendencia || 'N/A'}
 
-    return { perfil, fortes, fracos, tendencia, relatorio };
-  };
+----------------------------------------------------------------
+PARECER TÉCNICO:
+----------------------------------------------------------------
+${relatorio.parecerTecnico}
 
-  const analise = gerarAnaliseInteligente(atletaAtual);
+----------------------------------------------------------------
+PONTOS FORTES:
+----------------------------------------------------------------
+${relatorio.pontosFortes?.map(p => `• ${p}`).join('\n') || 'Nenhum informado'}
 
-  return (
-    <div className="relatorio-ia-container">
-      <h2>🤖 Inteligência Artificial & Relatórios de Scout</h2>
-      <p className="subtitulo">Análise preditiva, diagnóstico de desempenho e parecer técnico automatizado.</p>
+----------------------------------------------------------------
+PONTOS DE MELHORIA:
+----------------------------------------------------------------
+${relatorio.pontosMelhoria?.map(p => `• ${p}`).join('\n') || 'Nenhum informado'}
 
-      {/* Seletor de Atleta */}
-      <div className="card-seletor">
-        <label>Selecione o Atleta para Diagnóstico:</label>
-        <select 
-          value={atletaSelecionadoId} 
-          onChange={(e) => setAtletaSelecionadoId(e.target.value)}
-        >
-          <option value="">Escolha um atleta do plantel...</option>
-          {atletas.map(atleta => (
-            <option key={atleta.jogador_id} value={atleta.jogador_id}>
-              {atleta.nome} ({atleta.posicao}) - {atleta.jogos_disputados} jogos
-            </option>
-          ))}
-        </select>
-      </div>
+================================================================
+Relatório gerado automaticamente via Radar Jogadores AI
+================================================================
+`;
 
-      {/* Exibição do Dossiê de IA */}
-      {atletaAtual && analise ? (
-        <div className="dossie-grid">
-          
-          {/* Card Principal: Relatório em Linguagem Natural */}
-          <div className="dossie-card full-width">
-            <div className="card-header-ai">
-              <span>📝 Parecer Técnico Automatizado (LLM Simulado)</span>
-              <span className="badge-tendencia">Tendência: {analise.tendencia}</span>
+        const blob = new Blob([conteudoTxt], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Relatorio_Scout_${nomeAtleta.replace(/\s+/g, '_')}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    return (
+        <div style={{
+            minHeight: '100vh',
+            backgroundColor: '#0b0f19',
+            color: '#f8fafc',
+            fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+            padding: '40px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+        }}>
+            {/* Título Principal */}
+            <h1 style={{
+                fontSize: '28px',
+                fontWeight: '800',
+                letterSpacing: '2px',
+                color: '#38bdf8',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                textShadow: '0 0 14px rgba(56, 189, 248, 0.4)'
+            }}>
+                Relatório de Scout com IA
+            </h1>
+
+            {/* Subtítulo ajustado para cor branca */}
+            <p style={{
+                fontSize: '18px',
+                color: '#ffffff',
+                marginBottom: '30px',
+                fontWeight: '600',
+                letterSpacing: '0.5px'
+            }}>
+                Escolha o jogador
+            </p>
+
+            {/* Painel de Seleção e Ações */}
+            <div style={{ 
+                display: 'flex', 
+                gap: '12px', 
+                marginBottom: '35px', 
+                flexWrap: 'wrap', 
+                justifyContent: 'center',
+                alignItems: 'center' 
+            }}>
+                <select
+                    value={jogadorSelecionadoId}
+                    onChange={(e) => setJogadorSelecionadoId(e.target.value)}
+                    disabled={loadingJogadores || loading}
+                    style={{
+                        backgroundColor: '#1e293b',
+                        color: '#ffffff',
+                        border: '1px solid #334155',
+                        padding: '12px 18px',
+                        borderRadius: '8px',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        minWidth: '240px'
+                    }}
+                >
+                    {loadingJogadores ? (
+                        <option>Carregando atletas...</option>
+                    ) : (
+                        jogadores.map((j) => (
+                            <option key={j.id} value={j.id}>
+                                {j.nome} ({j.posicao || 'Jogador'})
+                            </option>
+                        ))
+                    )}
+                </select>
+
+                {/* Botão com texto 'GERAR' */}
+                <button 
+                    onClick={gerarRelatorio} 
+                    disabled={loading || loadingJogadores || !jogadorSelecionadoId}
+                    style={{
+                        backgroundColor: loading ? '#0284c7' : '#0284c7',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '12px 24px',
+                        fontWeight: '700',
+                        fontSize: '13px',
+                        borderRadius: '8px',
+                        cursor: (loading || loadingJogadores) ? 'not-allowed' : 'pointer',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
+                        transition: 'all 0.2s ease-in-out'
+                    }}
+                >
+                    {loading ? "GERANDO..." : "⚡ GERAR"}
+                </button>
+
+                {relatorio && (
+                    <button 
+                        onClick={baixarRelatorio}
+                        style={{
+                            backgroundColor: '#1e293b',
+                            color: '#38bdf8',
+                            border: '1px solid #0284c7',
+                            padding: '12px 20px',
+                            fontWeight: '700',
+                            fontSize: '13px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}
+                    >
+                        📥 BAIXAR RELATÓRIO (.TXT)
+                    </button>
+                )}
             </div>
-            <p className="texto-parecer">{analise.relatorio}</p>
-          </div>
 
-          {/* Card: Pontos Fortes */}
-          <div className="dossie-card card-forte">
-            <h3>⚡ Pontos Fortes Identificados</h3>
-            <ul>
-              {analise.fortes.map((p, index) => (
-                <li key={index}>{p}</li>
-              ))}
-            </ul>
-          </div>
+            {erro && (
+                <div style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid #ef4444',
+                    color: '#f87171',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    marginBottom: '20px'
+                }}>
+                    {erro}
+                </div>
+            )}
 
-          {/* Card: Pontos Fracos / Pontos de Melhoria */}
-          <div className="dossie-card card-fraco">
-            <h3>⚠️ Pontos de Melhoria / Alertas</h3>
-            <ul>
-              {analise.fracos.length > 0 ? (
-                analise.fracos.map((p, index) => <li key={index}>{p}</li>)
-              ) : (
-                <li>Nenhum ponto crítico de alerta identificado no momento.</li>
-              )}
-            </ul>
-          </div>
+            {/* Card com o Relatório */}
+            {relatorio && (
+                <div style={{
+                    width: '100%',
+                    maxWidth: '800px',
+                    backgroundColor: '#111827',
+                    border: '1px solid #1e293b',
+                    borderRadius: '16px',
+                    padding: '40px 30px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        display: 'inline-block',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        color: '#38bdf8',
+                        padding: '6px 16px',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        letterSpacing: '1px',
+                        marginBottom: '20px',
+                        textTransform: 'uppercase'
+                    }}>
+                        {relatorio.classificacaoPerfil}
+                    </div>
 
-          {/* Card: Perfil Tático */}
-            <div className="dossie-card full-width perfil-box">
-              <h3>🎯 Classificação de Perfil Tático</h3>
-              <div className="tag-perfil">{analise.perfil}</div>
-              <p className="sub-perfil">Cruzamento de métricas de scout realizado com base nas últimas atuações registradas na base de dados relacional.</p>
-            </div>
+                    <p style={{ fontSize: '16px', color: '#94a3b8', marginBottom: '20px' }}>
+                        Tendência: <strong style={{ color: '#38bdf8' }}>{relatorio.tendencia}</strong>
+                    </p>
 
+                    <div style={{
+                        backgroundColor: '#0f172a',
+                        borderRadius: '12px',
+                        padding: '20px',
+                        border: '1px solid #1e293b',
+                        marginBottom: '30px',
+                        textAlign: 'left'
+                    }}>
+                        <h3 style={{ fontSize: '13px', color: '#64748b', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
+                            Parecer Técnico
+                        </h3>
+                        <p style={{ fontSize: '15px', color: '#e2e8f0', lineHeight: '1.7', margin: 0 }}>
+                            {relatorio.parecerTecnico}
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', textAlign: 'left' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: '20px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                            <h4 style={{ fontSize: '13px', color: '#4ade80', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '1px' }}>
+                                Pontos Fortes
+                            </h4>
+                            <ul style={{ paddingLeft: '18px', margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.6' }}>
+                                {relatorio.pontosFortes?.map((ponto, idx) => (
+                                    <li key={idx} style={{ marginBottom: '6px' }}>{ponto}</li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div style={{ backgroundColor: '#0f172a', padding: '20px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                            <h4 style={{ fontSize: '13px', color: '#f87171', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '1px' }}>
+                                Pontos de Melhoria
+                            </h4>
+                            <ul style={{ paddingLeft: '18px', margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.6' }}>
+                                {relatorio.pontosMelhoria?.map((ponto, idx) => (
+                                    <li key={idx} style={{ marginBottom: '6px' }}>{ponto}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      ) : (
-        <div className="aviso-vazio">
-          Selecione um atleta acima para gerar o dossiê inteligente de desempenho.
-        </div>
-      )}
-
-    </div>
-  );
+    );
 }
