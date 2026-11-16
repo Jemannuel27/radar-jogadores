@@ -1,6 +1,496 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
 import './ComparacaoPage.css';
+
+function BuscaAtleta({ rotulo, atleta, selecionar, bloqueada, partidaId }) {
+  const [nome, setNome] = useState('');
+  const [opcoes, setOpcoes] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+  const [mensagem, setMensagem] = useState('');
+
+  async function buscar(evento) {
+    evento.preventDefault();
+    if (buscando || bloqueada || nome.trim().length < 2) return;
+
+    setBuscando(true);
+    setOpcoes([]);
+    selecionar(null);
+    setMensagem('');
+    try {
+      const { data } = await api.get(partidaId ? '/statsbomb/jogadores' : '/statsbomb/busca-global', {
+        params: { nome: nome.trim(), partidaId },
+      });
+      if (!Array.isArray(data?.jogadores)) throw new Error('Resposta inválida');
+      setOpcoes(data.jogadores);
+      if (!data.jogadores.length) setMensagem('Nenhum atleta encontrado.');
+    } catch {
+      setMensagem('Não foi possível buscar os atletas. Tente novamente.');
+    } finally {
+      setBuscando(false);
+    }
+  }
+
+  return (
+    <form className="select-box" onSubmit={buscar}>
+      <label>
+        {rotulo}
+        <input
+          type="search"
+          value={nome}
+          minLength={2}
+          maxLength={100}
+          required
+          placeholder="Digite o nome do jogador"
+          disabled={buscando || bloqueada}
+          onChange={(evento) => {
+            setNome(evento.target.value);
+            setOpcoes([]);
+            setMensagem('');
+            selecionar(null);
+          }}
+        />
+      </label>
+      <button type="submit" disabled={buscando || bloqueada}>
+        {buscando ? 'Buscando…' : 'Buscar'}
+      </button>
+      {mensagem && <p role="status">{mensagem}</p>}
+      {opcoes.length > 0 && (
+        <ul>
+          {opcoes.map((opcao) => (
+            <li key={opcao.id}>
+              <button
+                type="button"
+                disabled={bloqueada}
+                aria-pressed={atleta?.id === opcao.id}
+                onClick={() => selecionar(opcao)}
+              >
+                {opcao.nome} · {opcao.equipe ?? `${opcao.totalEscalacoes} escalações`}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {atleta && <p>Selecionado: {atleta.nome}</p>}
+    </form>
+  );
+}
+
+function SelecionarPartidaAtleta({ atleta, valor, onChange, bloqueada }) {
+  const [partidas, setPartidas] = useState(null);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get(`/statsbomb/jogadores/${atleta.id}/partidas`, {
+      signal: controller.signal,
+    }).then(({ data }) => {
+      if (!Array.isArray(data?.partidas)) throw new Error('Resposta inválida.');
+      if (!controller.signal.aborted) setPartidas(data.partidas);
+    }).catch(() => {
+      if (!controller.signal.aborted) setErro('Não foi possível carregar os jogos deste atleta.');
+    });
+    return () => controller.abort();
+  }, [atleta.id]);
+
+  if (erro) return <p role="alert">{erro}</p>;
+  if (!partidas) return <p role="status">Carregando partidas…</p>;
+  if (!partidas.length) return <p>Nenhuma partida disponível.</p>;
+
+  return (
+    <label>
+      Partida de {atleta.nome}
+      <select
+        disabled={bloqueada}
+        value={valor?.partidaId ?? ''}
+        onChange={(evento) => onChange(
+          partidas.find((jogo) => String(jogo.partidaId) === evento.target.value) ?? null
+        )}
+      >
+        <option value="">Selecione uma partida</option>
+        {partidas.map((jogo) => (
+          <option key={jogo.partidaId} value={jogo.partidaId}>
+            {rotuloPartida(jogo)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function rotuloPartida(jogo) {
+  if (!jogo.mandante || !jogo.visitante) return `Partida ${jogo.partidaId} · ${jogo.equipe}`;
+  return [jogo.data, `${jogo.mandante} × ${jogo.visitante}`, jogo.competicao, jogo.temporada]
+    .filter(Boolean).join(' · ');
+}
+
+function ComparacaoGlobal() {
+  const [dupla, setDupla] = useState([
+    { atleta: null, partida: null },
+    { atleta: null, partida: null },
+  ]);
+  const [resultado, setResultado] = useState(null);
+  const [carregando, setCarregando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [relatorioId, setRelatorioId] = useState(null);
+  const [erroRelatorio, setErroRelatorio] = useState('');
+  const [erro, setErro] = useState('');
+  const [a, b] = dupla;
+  const mesmoAtleta = Boolean(a.atleta && a.atleta.id === b.atleta?.id);
+  const podeComparar = a.partida && b.partida && !mesmoAtleta && !carregando && !salvando;
+
+  function atualizar(indice, campos) {
+    setDupla((atual) => atual.map((lado, posicao) =>
+      posicao === indice ? { ...lado, ...campos } : lado
+    ));
+    setResultado(null);
+    setRelatorioId(null);
+    setErroRelatorio('');
+    setErro('');
+  }
+
+  async function comparar() {
+    if (!podeComparar) return;
+    setCarregando(true);
+    setErro('');
+    setResultado(null);
+    setRelatorioId(null);
+    setErroRelatorio('');
+
+    try {
+      const { data } = await api.get('/statsbomb/comparar-partidas', {
+        params: {
+          atletaA: a.atleta.id,
+          partidaA: a.partida.partidaId,
+          atletaB: b.atleta.id,
+          partidaB: b.partida.partidaId,
+        },
+      });
+
+      if (!Array.isArray(data?.jogadores) || data.jogadores.length !== 2) {
+        throw new Error('Resposta inválida.');
+      }
+      setResultado(data);
+    } catch (falha) {
+      setErro(falha.response?.data?.erro || 'Não foi possível carregar a comparação.');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function salvarRelatorio() {
+    if (!resultado || salvando || relatorioId !== null) return;
+
+    const [jogadorA, jogadorB] = resultado.jogadores;
+    setSalvando(true);
+    setErroRelatorio('');
+
+    try {
+      const { data } = await api.post('/statsbomb/relatorios-partidas', {
+        atletaA: jogadorA.id,
+        partidaA: a.partida.partidaId,
+        atletaB: jogadorB.id,
+        partidaB: b.partida.partidaId,
+      });
+      setRelatorioId(data.id);
+    } catch (falha) {
+      setErroRelatorio(falha.response?.data?.erro || 'Não foi possível salvar o relatório.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <section className="card-section" aria-labelledby="busca-global-titulo">
+      <h3 id="busca-global-titulo">Comparação global de atletas</h3>
+      <p>Busque por nome no catálogo StatsBomb e escolha uma partida para cada atleta.</p>
+      <div className="selectors-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))' }}>
+        {dupla.map(({ atleta, partida }, indice) => (
+          <div key={indice} style={{ minWidth: 0 }}>
+            <BuscaAtleta
+              rotulo={indice === 0 ? 'Atleta A' : 'Atleta B'}
+              atleta={atleta}
+              bloqueada={carregando || salvando}
+              selecionar={(novo) => atualizar(indice, { atleta: novo, partida: null })}
+            />
+            {atleta && (
+              <SelecionarPartidaAtleta
+                key={atleta.id}
+                atleta={atleta}
+                valor={partida}
+                bloqueada={carregando || salvando}
+                onChange={(nova) => atualizar(indice, { partida: nova })}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      {mesmoAtleta && <p role="status">Selecione dois atletas diferentes.</p>}
+      <button type="button" className="btn-primary btn-compare" disabled={!podeComparar} onClick={comparar}>
+        {carregando ? 'Comparando…' : 'Comparar partidas'}
+      </button>
+      {erro && <p role="alert">{erro}</p>}
+      {resultado && (
+        <>
+          <p>Fonte: {resultado.fonte}. Disputas de pênaltis excluídas.</p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', textAlign: 'left' }}>
+              <thead>
+                <tr>
+                  <th scope="col">Atleta</th>
+                  <th scope="col">Partida</th>
+                  <th scope="col">Finalizações</th>
+                  <th scope="col">Gols</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resultado.jogadores.map((atleta, indice) => (
+                  <tr key={atleta.id}>
+                    <th scope="row">{atleta.nome} · {atleta.equipe}</th>
+                    <td>{rotuloPartida(dupla[indice].partida)}</td>
+                    <td>{atleta.entrouEmCampo ? atleta.finalizacoes : '—'}</td>
+                    <td>{atleta.entrouEmCampo ? atleta.gols : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {resultado.jogadores.some((atleta) => !atleta.entrouEmCampo) && (
+            <p>O traço indica que o atleta não entrou em campo.</p>
+          )}
+          <button
+            type="button"
+            className="btn-primary btn-compare"
+            disabled={salvando || relatorioId !== null}
+            onClick={salvarRelatorio}
+          >
+            {salvando ? 'Salvando…' : 'Gerar relatório estatístico'}
+          </button>
+          {relatorioId !== null && (
+            <p role="status">Relatório nº {relatorioId} salvo. Consulte IA e Relatórios.</p>
+          )}
+          {erroRelatorio && <p role="alert">{erroRelatorio}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
+function ComparacaoPartida({ partidaId }) {
+  const [atletaA, setAtletaA] = useState(null);
+  const [atletaB, setAtletaB] = useState(null);
+  const [gerandoRelatorio, setGerandoRelatorio] = useState(false);
+  const [mensagemRelatorio, setMensagemRelatorio] = useState('');
+  const [resultado, setResultado] = useState(null);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState('');
+
+
+  const mesmoAtleta = Boolean(atletaA && atletaA.id === atletaB?.id);
+  const podeComparar = atletaA && atletaB && !mesmoAtleta && !carregando && !gerandoRelatorio;
+
+  function selecionar(atualizar, atleta) {
+    atualizar(atleta);
+    setResultado(null);
+    setErro('');
+    setMensagemRelatorio('');
+  }
+
+  async function comparar() {
+    if (!podeComparar) return;
+
+    setCarregando(true);
+    setResultado(null);
+    setErro('');
+    setMensagemRelatorio('');
+    try {
+      const { data } = await api.get('/statsbomb/comparar', {
+        params: { partidaId, atletaA: atletaA.id, atletaB: atletaB.id },
+      });
+      if (!Array.isArray(data?.jogadores) || data.jogadores.length !== 2) {
+        throw new Error('Resposta inválida');
+      }
+      setResultado(data);
+    } catch {
+      setErro('Não foi possível carregar a comparação. Tente novamente.');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function gerarRelatorio() {
+    if (!resultado || gerandoRelatorio) return;
+
+    const [jogadorA, jogadorB] = resultado.jogadores;
+    setGerandoRelatorio(true);
+    setMensagemRelatorio('');
+
+    try {
+      const { data } = await api.post('/statsbomb/relatorios', {
+        partidaId: resultado.partidaId,
+        atletaA: jogadorA.id,
+        atletaB: jogadorB.id,
+      });
+
+      setMensagemRelatorio(
+        `Relatório nº ${data.id} salvo. Consulte IA e Relatórios.`
+      );
+    } catch (erro) {
+      setMensagemRelatorio(
+        erro.response?.data?.erro || 'Não foi possível salvar o relatório.'
+      );
+    } finally {
+      setGerandoRelatorio(false);
+    }
+  }
+
+  return (
+    <section className="card-section" aria-labelledby="final-2022-titulo">
+      <h3 id="final-2022-titulo">Comparação com dados reais</h3>
+      <p>Estatísticas da partida selecionada, incluindo prorrogação e excluindo a disputa de pênaltis.</p>
+      <div className="selectors-grid">
+        <BuscaAtleta
+          rotulo="Atleta A"
+          atleta={atletaA}
+          bloqueada={carregando || gerandoRelatorio}
+          partidaId={partidaId}
+          selecionar={(atleta) => selecionar(setAtletaA, atleta)}
+        />
+        <span className="vs-badge">VS</span>
+        <BuscaAtleta
+          rotulo="Atleta B"
+          atleta={atletaB}
+          bloqueada={carregando || gerandoRelatorio}
+          partidaId={partidaId}
+          selecionar={(atleta) => selecionar(setAtletaB, atleta)}
+        />
+      </div>
+      {mesmoAtleta && <p role="status">Selecione dois atletas diferentes.</p>}
+      <button type="button" className="btn-primary btn-compare" disabled={!podeComparar} onClick={comparar}>
+        {carregando ? 'Comparando…' : 'Comparar atletas'}
+      </button>
+      {erro && <p role="alert">{erro}</p>}
+      {resultado && (
+        <>
+          <p>Fonte: {resultado.fonte} · Partida {resultado.partidaId}</p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', textAlign: 'left' }}>
+              <thead>
+                <tr>
+                  <th scope="col">Jogador</th>
+                  <th scope="col">Seleção</th>
+                  <th scope="col">Finalizações</th>
+                  <th scope="col">Gols</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resultado.jogadores.map((atleta) => (
+                  <tr key={atleta.id}>
+                    <th scope="row">{atleta.nome}</th>
+                    <td>{atleta.equipe}</td>
+                    <td>{atleta.entrouEmCampo ? atleta.finalizacoes : '—'}</td>
+                    <td>{atleta.entrouEmCampo ? atleta.gols : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {resultado.jogadores.some((atleta) => !atleta.entrouEmCampo) && (
+            <p>O traço indica que o atleta não entrou em campo.</p>
+          )}
+          <button
+            type="button"
+            className="btn-primary btn-compare"
+            onClick={gerarRelatorio}
+            disabled={gerandoRelatorio}
+          >
+            {gerandoRelatorio ? 'Salvando…' : 'Gerar relatório estatístico'}
+          </button>
+          {mensagemRelatorio && <p role="status">{mensagemRelatorio}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
+function ComparacaoFinal2022() {
+  const [temporadas, setTemporadas] = useState([]);
+  const [recorte, setRecorte] = useState('');
+  const [partidas, setPartidas] = useState([]);
+  const [partidaId, setPartidaId] = useState('');
+  const [erroCatalogo, setErroCatalogo] = useState('');
+  const [erroPartidas, setErroPartidas] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get('/statsbomb/catalogo', { signal: controller.signal })
+      .then(({ data }) => setTemporadas(data.temporadas))
+      .catch(() => {
+        if (!controller.signal.aborted) setErroCatalogo('Falha ao carregar o catálogo.');
+      });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!recorte) return;
+    const controller = new AbortController();
+    const [competicaoId, temporadaId] = recorte.split(':');
+    api.get('/statsbomb/partidas', {
+      params: { competicaoId, temporadaId },
+      signal: controller.signal,
+    })
+      .then(({ data }) => {
+        if (controller.signal.aborted) return;
+        setPartidas(data.partidas);
+        if (!data.partidas.length) setErroPartidas('Nenhuma partida disponível neste recorte.');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setErroPartidas('Falha ao carregar as partidas.');
+      });
+    return () => controller.abort();
+  }, [recorte]);
+
+  return (
+    <>
+      <section className="card-section">
+        <h3>Catálogo StatsBomb Open Data</h3>
+        <div className="select-box">
+          <label>
+            Competição e temporada
+            <select value={recorte} onChange={(evento) => {
+              setRecorte(evento.target.value);
+              setPartidas([]);
+              setPartidaId('');
+              setErroPartidas('');
+            }}>
+              <option value="">Selecione uma competição e temporada</option>
+              {temporadas.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.pais} · {item.competicao} · {item.temporada}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Partida
+            <select value={partidaId} disabled={!partidas.length} onChange={(evento) => setPartidaId(evento.target.value)}>
+              <option value="">Selecione uma partida</option>
+              {partidas.map((jogo) => (
+                <option key={jogo.id} value={jogo.id}>
+                  {jogo.data} · {jogo.mandante} × {jogo.visitante}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {erroCatalogo && <p role="alert">{erroCatalogo}</p>}
+        {erroPartidas && <p role="alert">{erroPartidas}</p>}
+        {!temporadas.length && !erroCatalogo && <p role="status">Carregando catálogo…</p>}
+        {recorte && !partidas.length && !erroPartidas && <p role="status">Carregando partidas…</p>}
+      </section>
+      {partidaId && <ComparacaoPartida key={partidaId} partidaId={partidaId} />}
+    </>
+  );
+}
 
 export function ComparacaoPage() {
   const [jogadores, setJogadores] = useState([]);
@@ -14,21 +504,19 @@ export function ComparacaoPage() {
   const [loadingIa, setLoadingIa] = useState(false);
   const [erro, setErro] = useState('');
 
-  useEffect(() => {
-    carregarJogadores();
-  }, []);
-
-  const carregarJogadores = async () => {
+ useEffect(() => {
+  const carregar = async () => {
     try {
       const res = await api.get('/jogadores');
-      if (Array.isArray(res.data)) {
-        setJogadores(res.data);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar lista de atletas:', err);
-      setErro('Erro ao carregar lista de atletas do servidor.');
+      setJogadores(res.data);
+    } catch (error) {
+      console.error('Erro ao carregar jogadores:', error);
+      setJogadores([]);
     }
   };
+
+  carregar();
+}, []);
 
   const atletaA = useMemo(() => jogadores.find(j => String(j.id) === String(jogadorAId)), [jogadores, jogadorAId]);
   const atletaB = useMemo(() => jogadores.find(j => String(j.id) === String(jogadorBId)), [jogadores, jogadorBId]);
@@ -130,8 +618,8 @@ export function ComparacaoPage() {
       {/* Banner de Título */}
       <div className="hero-banner">
         <div className="banner-content">
-          <span className="badge-tag">ULTIMATE SCOUT 26</span>
-          <h1>HEAD TO HEAD / COMPARAÇÃO</h1>
+    
+          <h1 style={{ color: '#ffffff' }}>HEAD TO HEAD / COMPARAÇÃO</h1>
           <p>Confronto estatístico direto entre dois atletas do plantel com síntese tática via IA.</p>
         </div>
       </div>
@@ -139,6 +627,9 @@ export function ComparacaoPage() {
       {erro && <div className="error-badge">{erro}</div>}
 
       {/* Seleção dos Atletas */}
+      <ComparacaoGlobal />
+      <ComparacaoFinal2022 />
+
       <div className="card-section selectors-card">
         <h3>⚔️ SELECIONE OS ATLETAS</h3>
         <div className="selectors-grid">

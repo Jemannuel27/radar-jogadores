@@ -10,7 +10,7 @@ const partidaRoutes = require('./routes/partidaRoutes');
 const estatisticaRoutes = require('./routes/estatisticaRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const iaRoutes = require('./routes/iaRoutes');
-
+const statsbombRoutes = require('./routes/statsbombRoutes');
 const app = express();
 
 // Middlewares Globais
@@ -25,6 +25,7 @@ app.use('/partidas', partidaRoutes);
 app.use('/estatisticas', estatisticaRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/ia', iaRoutes);
+app.use('/statsbomb', statsbombRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

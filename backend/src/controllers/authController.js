@@ -4,23 +4,33 @@ const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   const { nome, email, senha } = req.body;
+
   if (!nome || !email || !senha) {
-    return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
+    return res.status(400).json({
+      erro: 'Preencha todos os campos obrigatórios.',
+    });
   }
 
   try {
-    const userExists = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+    const userExists = await pool.query(
+      'SELECT * FROM usuarios WHERE email = $1',
+      [email]
+    );
+
     if (userExists.rows.length > 0) {
       return res.status(400).json({ erro: 'E-mail já cadastrado.' });
     }
 
     const senhaHash = await bcrypt.hash(senha, 10);
     const newUser = await pool.query(
-      'INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, email',
+      'INSERT INTO usuarios (nome, email, senha_hash) VALUES ($1, $2, $3) RETURNING id, nome, email',
       [nome, email, senhaHash]
     );
 
-    return res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso!', usuario: newUser.rows[0] });
+    return res.status(201).json({
+      mensagem: 'Usuário cadastrado com sucesso!',
+      usuario: newUser.rows[0],
+    });
   } catch (error) {
     console.error('Erro no cadastro:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
@@ -29,18 +39,24 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { email, senha } = req.body;
+
   if (!email || !senha) {
     return res.status(400).json({ erro: 'E-mail e senha são obrigatórios.' });
   }
 
   try {
-    const userQuery = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+    const userQuery = await pool.query(
+      'SELECT * FROM usuarios WHERE email = $1',
+      [email]
+    );
+
     if (userQuery.rows.length === 0) {
       return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
     }
 
     const usuario = userQuery.rows[0];
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
+
     if (!senhaValida) {
       return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
     }
@@ -51,9 +67,37 @@ exports.login = async (req, res) => {
       { expiresIn: '8h' }
     );
 
-    return res.json({ mensagem: 'Login realizado com sucesso!', token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email } });
+    return res.json({
+      mensagem: 'Login realizado com sucesso!',
+      token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+      },
+    });
   } catch (error) {
     console.error('Erro no login:', error);
+    return res.status(500).json({ erro: 'Erro interno no servidor.' });
+  }
+};
+
+exports.me = async (req, res) => {
+  try {
+    const resultado = await pool.query(
+      'SELECT id, nome, email FROM usuarios WHERE id = $1',
+      [req.user.id]
+    );
+
+    const usuario = resultado.rows[0];
+
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado.' });
+    }
+
+    return res.json({ usuario });
+  } catch (error) {
+    console.error('Erro ao consultar perfil:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
   }
 };

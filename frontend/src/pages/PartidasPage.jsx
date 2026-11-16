@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
 import './PartidasPage.css';
 
@@ -22,7 +22,7 @@ export function PartidasPage() {
     data_partida: '',
     competicao: '',
     local_partida: 'Casa',
-    gols_pro: 0,
+    gols_pro: 1,
     gols_contra: 0,
     status_partida: 'Agendada'
   });
@@ -32,14 +32,14 @@ export function PartidasPage() {
     carregarDados();
   }, []);
 
-  const carregarDados = async () => {
+ async function carregarDados() {
     setLoading(true);
     setErro('');
     try {
       const [resPartidas, resEquipes] = await Promise.allSettled([
         api.get('/partidas'),
         api.get('/equipes')
-      ]);
+      ])
 
       if (resPartidas.status === 'fulfilled' && Array.isArray(resPartidas.value.data)) {
         setPartidas(resPartidas.value.data);
@@ -86,11 +86,20 @@ export function PartidasPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro('');
+
+    const golsPro = Number(formData.gols_pro);
+    if (!Number.isSafeInteger(golsPro) || golsPro < 1) {
+      setErro('Informe um número inteiro a partir de 1 em Gols Pró.');
+      return;
+    }
+
+    const dadosPartida = { ...formData, gols_pro: golsPro };
+
     try {
       if (editId) {
-        await api.put(`/partidas/${editId}`, formData);
+        await api.put(`/partidas/${editId}`, dadosPartida);
       } else {
-        await api.post('/partidas', formData);
+        await api.post('/partidas', dadosPartida);
       }
       resetForm();
       carregarDados();
@@ -133,7 +142,7 @@ export function PartidasPage() {
       data_partida: '',
       competicao: '',
       local_partida: 'Casa',
-      gols_pro: 0,
+      gols_pro: 1,
       gols_contra: 0,
       status_partida: 'Agendada'
     });
@@ -153,10 +162,10 @@ export function PartidasPage() {
 
   return (
     <div className="partidas-container">
-      {/* Banner Principal no padrão EA Sports */}
+      {/* Cabeçalho da página */}
       <div className="hero-banner">
         <div className="banner-content">
-          <span className="badge-tag">ULTIMATE SCOUT 26</span>
+         
           <h1>GESTÃO DE PARTIDAS</h1>
           <p>Cadastre confrontos, acompanhe placares e mantenha o histórico atualizado.</p>
         </div>
@@ -209,7 +218,14 @@ export function PartidasPage() {
           <div className="form-group row-score">
             <div>
               <label>Gols Pró</label>
-              <input type="number" value={formData.gols_pro} onChange={(e) => setFormData({...formData, gols_pro: parseInt(e.target.value) || 0})} />
+              <input
+                type="number"
+                min="1"
+                step="1"
+                required
+                value={formData.gols_pro}
+                onChange={(e) => setFormData({ ...formData, gols_pro: e.target.value })}
+              />
             </div>
             <div>
               <label>Gols Contra</label>

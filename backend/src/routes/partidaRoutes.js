@@ -1,24 +1,31 @@
+
 const express = require('express');
 const router = express.Router();
+
 const partidaController = require('../controllers/partidaController');
+const { autenticarToken } = require('../middlewares/authMiddleware');
 
-// Verificação de segurança para garantir que as funções existem no controller
+// Verifica se as funções do controlador existem.
 if (typeof partidaController.listarPartidas !== 'function') {
-  console.error("ERRO: A função 'listarPartidas' não foi encontrada em partidaController.js");
-}
-if (typeof partidaController.criarPartida !== 'function') {
-  console.error("ERRO: A função 'criarPartida' não foi encontrada em partidaController.js");
-}
-if (typeof partidaController.atualizarPartida !== 'function') {
-  console.error("ERRO: A função 'atualizarPartida' não foi encontrada em partidaController.js");
-}
-if (typeof partidaController.deletarPartida !== 'function') {
-  console.error("ERRO: A função 'deletarPartida' não foi encontrada em partidaController.js");
+  console.error("ERRO: A função 'listarPartidas' não foi encontrada.");
 }
 
-router.get('/', partidaController.listarPartidas);
-router.post('/', partidaController.criarPartida);
-router.put('/:id', partidaController.atualizarPartida);
-router.delete('/:id', partidaController.partidaController ? partidaController.deletarPartida : partidaController.deletarPartida); // ajuste seguro
+if (typeof partidaController.criarPartida !== 'function') {
+  console.error("ERRO: A função 'criarPartida' não foi encontrada.");
+}
+
+if (typeof partidaController.atualizarPartida !== 'function') {
+  console.error("ERRO: A função 'atualizarPartida' não foi encontrada.");
+}
+
+if (typeof partidaController.deletarPartida !== 'function') {
+  console.error("ERRO: A função 'deletarPartida' não foi encontrada.");
+}
+
+// Todas as rotas de partidas exigem autenticação.
+router.get('/', autenticarToken, partidaController.listarPartidas);
+router.post('/', autenticarToken, partidaController.criarPartida);
+router.put('/:id', autenticarToken, partidaController.atualizarPartida);
+router.delete('/:id', autenticarToken, partidaController.deletarPartida);
 
 module.exports = router;

@@ -52,3 +52,20 @@
   background-color: #ffb703;
   border-color: #ffb703;
 }
+
+.navbar-brand-image {
+  display: block;
+  width: clamp(150px, 22vw, 260px);
+  max-width: 100%;
+  height: auto;
+}
+
+.navbar-links .nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-links .nav-icon {
+  flex: 0 0 auto;
+}

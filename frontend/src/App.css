@@ -1,4 +1,6 @@
-/* Reset global e regras de preenchimento total da tela */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* Reset global e preenchimento da tela */
 #root {
   width: 100% !important;
   max-width: 100% !important;
@@ -24,7 +26,7 @@
   flex: 1;
 }
 
-/* Modal e sobreposições universais */
+/* Modal e sobreposições */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -37,4 +39,19 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+}
+
+/* Títulos e navegação */
+.app-layout :is(h1, h2, h3, .nav-btn, .badge-tag),
+.auth-wrapper .auth-header h2 {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+/* Indicadores, placares e números da comparação */
+.app-layout .dashboard-container .kpi-card h2,
+.app-layout .dashboard-container .radar-hero-stat strong,
+.app-layout .comparacao-container :is(.val-a, .val-b, .vs-badge) {
+  font-family: 'Rajdhani', system-ui, sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

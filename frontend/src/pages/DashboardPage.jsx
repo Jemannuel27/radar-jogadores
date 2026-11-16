@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
 import {
   Chart as ChartJS,
@@ -44,13 +44,12 @@ export function DashboardPage() {
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [filtroJogador, setFiltroJogador] = useState('TODOS');
 
-  useEffect(() => {
-    carregarDados();
-  }, []);
-
+ 
+useEffect(() => {
   const carregarDados = async () => {
     setLoading(true);
     setErro('');
+
     try {
       const [resPartidas, resEquipes, resJogadores] = await Promise.allSettled([
         api.get('/partidas'),
@@ -61,9 +60,11 @@ export function DashboardPage() {
       if (resPartidas.status === 'fulfilled' && Array.isArray(resPartidas.value.data)) {
         setPartidas(resPartidas.value.data);
       }
+
       if (resEquipes.status === 'fulfilled' && Array.isArray(resEquipes.value.data)) {
         setEquipes(resEquipes.value.data);
       }
+
       if (resJogadores.status === 'fulfilled' && Array.isArray(resJogadores.value.data)) {
         setJogadores(resJogadores.value.data);
       }
@@ -74,6 +75,10 @@ export function DashboardPage() {
       setLoading(false);
     }
   };
+
+  carregarDados();
+}, []);
+
 
   // Competições Únicas
   const competicoesUnicas = useMemo(() => {
@@ -136,8 +141,8 @@ export function DashboardPage() {
         {
           label: 'Gols Pró',
           data: partidasOrdenadas.map((p) => p.gols_pro || 0),
-          borderColor: '#00d4ff',
-          backgroundColor: 'rgba(0, 212, 255, 0.15)',
+          borderColor: '#b8f34a',
+          backgroundColor: 'rgba(184, 243, 74, 0.15)',
           fill: true,
           tension: 0.3
         },
@@ -162,7 +167,7 @@ export function DashboardPage() {
           data: [kpis.vitorias, kpis.empates, kpis.derrotas],
           backgroundColor: ['#2ecc71', '#ffb703', '#e63946'],
           borderWidth: 2,
-          borderColor: '#101426'
+          borderColor: '#151c25'
         }
       ]
     };
@@ -176,7 +181,7 @@ export function DashboardPage() {
       datasets: [
         {
           label: 'Participações em Gols',
-          data: listaJogadores.map((_, idx) => (5 - idx) * 3 + Math.floor(Math.random() * 2)),
+         data: listaJogadores.map((_, idx) => (5 - idx) * 3),
           backgroundColor: '#ffb703',
           borderRadius: 6
         }
@@ -219,9 +224,15 @@ export function DashboardPage() {
       {/* Banner Principal */}
       <div className="hero-banner">
         <div className="banner-content">
-          <span className="badge-tag">ULTIMATE SCOUT 26</span>
-          <h1>DASHBOARD DE ANALYTICS</h1>
-          <p>Acompanhe o desempenho tático, evolução de gols e índice de aproveitamento da equipe.</p>
+         
+         <h1 style={{ color: '#ffffff' }}>DESEMPENHO DA EQUIPE</h1>
+          <p>Acompanhe os resultados, a evolução dos gols e o aproveitamento nas partidas cadastradas.</p>
+        </div>
+        <div className="radar-hero-stat">
+          <span>Aproveitamento no recorte</span>
+          <strong>{kpis.aproveitamento}%</strong>
+          <progress value={kpis.aproveitamento} max={100} aria-label="Aproveitamento no recorte" />
+          <small>{kpis.total} partidas</small>
         </div>
       </div>
 
@@ -235,16 +246,16 @@ export function DashboardPage() {
         </div>
         <div className="filter-grid">
           <div>
-            <label>Equipe</label>
-            <select value={filtroEquipe} onChange={(e) => setFiltroEquipe(e.target.value)}>
+            <label htmlFor="dashboard-filtroEquipe">Equipe</label>
+            <select id="dashboard-filtroEquipe" value={filtroEquipe} onChange={(e) => setFiltroEquipe(e.target.value)}>
               <option value="TODAS">Todas as Equipes</option>
               {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
             </select>
           </div>
 
           <div>
-            <label>Competição</label>
-            <select value={filtroCompeticao} onChange={(e) => setFiltroCompeticao(e.target.value)}>
+            <label htmlFor="dashboard-filtroCompeticao">Competição</label>
+            <select id="dashboard-filtroCompeticao" value={filtroCompeticao} onChange={(e) => setFiltroCompeticao(e.target.value)}>
               <option value="TODAS">Todas as Competições</option>
               {competicoesUnicas.map((comp, idx) => (
                 <option key={idx} value={comp}>{comp}</option>
@@ -253,18 +264,18 @@ export function DashboardPage() {
           </div>
 
           <div>
-            <label>De (Data Inicial)</label>
-            <input type="date" value={filtroDataInicio} onChange={(e) => setFiltroDataInicio(e.target.value)} />
+            <label htmlFor="dashboard-filtroDataInicio">De (Data Inicial)</label>
+            <input type="date" id="dashboard-filtroDataInicio" value={filtroDataInicio} onChange={(e) => setFiltroDataInicio(e.target.value)} />
           </div>
 
           <div>
-            <label>Até (Data Final)</label>
-            <input type="date" value={filtroDataFim} onChange={(e) => setFiltroDataFim(e.target.value)} />
+            <label htmlFor="dashboard-filtroDataFim">Até (Data Final)</label>
+            <input type="date" id="dashboard-filtroDataFim" value={filtroDataFim} onChange={(e) => setFiltroDataFim(e.target.value)} />
           </div>
 
           <div>
-            <label>Jogador Em Destaque</label>
-            <select value={filtroJogador} onChange={(e) => setFiltroJogador(e.target.value)}>
+            <label htmlFor="dashboard-filtroJogador">Jogador Em Destaque</label>
+            <select id="dashboard-filtroJogador" value={filtroJogador} onChange={(e) => setFiltroJogador(e.target.value)}>
               <option value="TODOS">Selecione um Atleta</option>
               {jogadores.map((j) => <option key={j.id} value={j.id}>{j.nome}</option>)}
             </select>
@@ -301,6 +312,10 @@ export function DashboardPage() {
       </div>
 
       {/* Grid de Gráficos (4 Gráficos) */}
+      <div className="radar-section-heading">
+        <span>ANÁLISE DE PARTIDAS E ATLETAS</span>
+        <h2>Desempenho em gráficos</h2>
+      </div>
       <div className="charts-grid">
         {/* Gráfico 1: Evolução de Gols */}
         <div className="card-section chart-card">
@@ -311,10 +326,10 @@ export function DashboardPage() {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8f9bba' } } },
+                plugins: { legend: { labels: { color: '#aebaca' } } },
                 scales: {
-                  x: { ticks: { color: '#8f9bba' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                  y: { ticks: { color: '#8f9bba' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                  x: { ticks: { color: '#aebaca' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                  y: { ticks: { color: '#aebaca' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                 }
               }}
             />
@@ -330,7 +345,7 @@ export function DashboardPage() {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: '#8f9bba' } } }
+                plugins: { legend: { position: 'bottom', labels: { color: '#aebaca' } } }
               }}
             />
           </div>
@@ -338,7 +353,7 @@ export function DashboardPage() {
 
         {/* Gráfico 3: Top 5 Jogadores */}
         <div className="card-section chart-card">
-          <h3>⭐ TOP 5 JOGADORES (AÇÕES EM GOL)</h3>
+          <h3>Participações em gols — dados simulados</h3>
           <div className="chart-wrapper">
             <Bar
               data={chartTopJogadores}
@@ -347,8 +362,8 @@ export function DashboardPage() {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { ticks: { color: '#8f9bba' }, grid: { display: false } },
-                  y: { ticks: { color: '#8f9bba' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                  x: { ticks: { color: '#aebaca' }, grid: { display: false } },
+                  y: { ticks: { color: '#aebaca' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                 }
               }}
             />
@@ -357,17 +372,17 @@ export function DashboardPage() {
 
         {/* Gráfico 4: Evolução Individual */}
         <div className="card-section chart-card">
-          <h3>👤 EVOLUÇÃO INDIVIDUAL DO ATLETA</h3>
+          <h3>Evolução individual — dados simulados</h3>
           <div className="chart-wrapper">
             <Line
               data={chartEvolucaoIndividual}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8f9bba' } } },
+                plugins: { legend: { labels: { color: '#aebaca' } } },
                 scales: {
-                  x: { ticks: { color: '#8f9bba' }, grid: { display: false } },
-                  y: { min: 0, max: 10, ticks: { color: '#8f9bba' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                  x: { ticks: { color: '#aebaca' }, grid: { display: false } },
+                  y: { min: 0, max: 10, ticks: { color: '#aebaca' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                 }
               }}
             />

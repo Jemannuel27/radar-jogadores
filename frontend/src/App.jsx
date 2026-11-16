@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import PerfilPage from './pages/PerfilPage';
+import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import AuthPage from './pages/AuthPage';
 import PlantelPage from './pages/PlantelPage';
@@ -6,43 +7,72 @@ import PartidasPage from './pages/PartidasPage';
 import DashboardPage from './pages/DashboardPage';
 import ComparacaoPage from './pages/ComparacaoPage';
 import RelatorioIaPage from './pages/RelatorioIaPage';
+import { api } from './services/api';
 import './App.css';
 
 export function App() {
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [token, setToken] = useState(
+    () => localStorage.getItem('token') || null
+  );
   const [activeTab, setActiveTab] = useState('plantel');
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
 
   const handleLoginSuccess = (newToken) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
+    setActiveTab('plantel');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     setToken(null);
+    setActiveTab('plantel');
   };
 
-  // Se não houver token ativo, renderiza a tela de Auth (Login/Cadastro)
+  // Verifica se o token salvo ainda é aceito pelo backend.
+  useEffect(() => {
+    if (!token) return;
+
+    let ativo = true;
+
+    async function verificarSessao() {
+      try {
+        await api.get('/jogadores');
+      } catch (err) {
+        if (
+          ativo &&
+          (err.response?.status === 401 ||
+            err.response?.status === 403)
+        ) {
+          localStorage.removeItem('token');
+          setToken(null);
+        } else if (!err.response) {
+          console.error(
+            'Não foi possível conectar ao backend:',
+            err.message
+          );
+        }
+      }
+    }
+
+    verificarSessao();
+
+    return () => {
+      ativo = false;
+    };
+  }, [token]);
+
   if (!token) {
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Se o token estiver presente, renderiza a estrutura completa do sistema
   return (
     <div className="app-layout">
-      <Navbar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onLogout={handleLogout} 
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onLogout={handleLogout}
       />
-      
+
       <main className="main-content">
         <div style={{ display: activeTab === 'plantel' ? 'block' : 'none' }}>
           <PlantelPage />
@@ -63,6 +93,7 @@ export function App() {
         <div style={{ display: activeTab === 'relatorios' ? 'block' : 'none' }}>
           <RelatorioIaPage />
         </div>
+{activeTab === 'perfil' && <PerfilPage onLogout={handleLogout} />}
       </main>
     </div>
   );
