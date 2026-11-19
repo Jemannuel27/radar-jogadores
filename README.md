@@ -1,4 +1,4 @@
-# Radar de Jogadores
+# Radar Scout
 
 ## Login e cadastro
 
