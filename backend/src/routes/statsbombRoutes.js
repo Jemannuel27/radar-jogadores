@@ -4,7 +4,9 @@ const { readFile } = require('node:fs/promises');
 const path = require('node:path');
 
 const router = express.Router();
-const BASE_URL = 'https://raw.githubusercontent.com/hudl/open-data/master/data';
+
+const BASE_URL =
+  'https://raw.githubusercontent.com/hudl/open-data/master/data';
 const FONTE = 'StatsBomb Open Data';
 const FINAL = 3869685;
 
@@ -19,9 +21,13 @@ async function lerArquivo(caminho) {
   });
 
   if (resposta.status === 404) return null;
-  if (!resposta.ok) throw new Error(`StatsBomb HTTP ${resposta.status}`);
+
+  if (!resposta.ok) {
+    throw new Error(`StatsBomb HTTP ${resposta.status}`);
+  }
 
   const dados = await resposta.json();
+
   if (!Array.isArray(dados)) {
     throw new Error('Resposta inválida do StatsBomb.');
   }
@@ -30,7 +36,10 @@ async function lerArquivo(caminho) {
 }
 
 function lerId(valor) {
-  if (typeof valor !== 'string' && typeof valor !== 'number') return null;
+  if (typeof valor !== 'string' && typeof valor !== 'number') {
+    return null;
+  }
+
   if (!/^\d+$/.test(String(valor))) return null;
 
   const id = Number(valor);
@@ -38,7 +47,11 @@ function lerId(valor) {
 }
 
 function normalizar(nome) {
-  return nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }
 
 function rota(handler) {
@@ -47,6 +60,7 @@ function rota(handler) {
       return await handler(req, res);
     } catch (erro) {
       console.error('Erro ao consultar StatsBomb:', erro.message);
+
       return res.status(502).json({
         erro: 'Não foi possível consultar os dados do StatsBomb.',
       });
@@ -72,36 +86,104 @@ async function elenco(partidaId) {
 
 async function calcularComparacao(partidaId, atletas) {
   const eventos = await lerArquivo(`events/${partidaId}.json`);
+
   if (!eventos) return null;
 
   const jogadores = atletas.map((atleta) => ({
     ...atleta,
     gols: 0,
     finalizacoes: 0,
+    passesTentados: 0,
+    passesCompletos: 0,
+    desarmesTentados: 0,
+    desarmesGanhos: 0,
+    interceptacoes: 0,
+    driblesTentados: 0,
+    driblesCompletos: 0,
   }));
-  const porId = new Map(jogadores.map((atleta) => [atleta.id, atleta]));
+
+  const porId = new Map(
+    jogadores.map((atleta) => [atleta.id, atleta])
+  );
 
   for (const evento of eventos) {
-    if (evento.type?.name !== 'Shot' || evento.period < 1 || evento.period > 4) {
-      continue;
-    }
+    // Exclui a disputa de pênaltis.
+    if (evento.period < 1 || evento.period > 4) continue;
 
     const atleta = porId.get(evento.player?.id);
     if (!atleta) continue;
 
-    atleta.finalizacoes += 1;
-    if (evento.shot?.outcome?.name === 'Goal') atleta.gols += 1;
+    switch (evento.type?.name) {
+      case 'Shot':
+        atleta.finalizacoes += 1;
+
+        if (evento.shot?.outcome?.name === 'Goal') {
+          atleta.gols += 1;
+        }
+        break;
+
+      case 'Pass':
+        atleta.passesTentados += 1;
+
+        // Nos arquivos Open Data, passes completos não têm outcome.
+        if (evento.pass && evento.pass.outcome == null) {
+          atleta.passesCompletos += 1;
+        }
+        break;
+
+      case 'Duel':
+        if (evento.duel?.type?.name === 'Tackle') {
+          atleta.desarmesTentados += 1;
+
+          const resultado = evento.duel.outcome?.name;
+          const resultadosPositivos = [
+            'Won',
+            'Success',
+            'Success In Play',
+            'Success Out',
+          ];
+
+          if (resultadosPositivos.includes(resultado)) {
+            atleta.desarmesGanhos += 1;
+          }
+        }
+        break;
+
+      case 'Interception':
+        // Conta todos os eventos de interceptação registrados.
+        atleta.interceptacoes += 1;
+        break;
+
+      case 'Dribble':
+        atleta.driblesTentados += 1;
+
+        if (evento.dribble?.outcome?.name === 'Complete') {
+          atleta.driblesCompletos += 1;
+        }
+        break;
+
+      default:
+        break;
+    }
   }
 
-  return { fonte: FONTE, partidaId, jogadores };
+  return {
+    fonte: FONTE,
+    partidaId,
+    jogadores,
+  };
 }
 
 async function salvarRelatorio(res, dados) {
   const [atletaA, atletaB] = dados.jogadores;
+
   const resumo = dados.jogadores.map((atleta) => {
     const nome = `${atleta.nome} (${atleta.equipe})`;
 
-    if (!atleta.entrouEmCampo && atleta.finalizacoes === 0) {
+    if (
+      atleta.entrouEmCampo === false &&
+      atleta.finalizacoes === 0
+    ) {
       return `${nome}: não entrou em campo.`;
     }
 
@@ -109,20 +191,31 @@ async function salvarRelatorio(res, dados) {
       ? percentual.format(atleta.gols / atleta.finalizacoes)
       : 'indisponível';
 
-    return `${nome}: ${atleta.finalizacoes} finalizações e ${atleta.gols} gols. ` +
-      `Conversão: ${conversao}.`;
+    return [
+      nome,
+      `Gols: ${atleta.gols}.`,
+      `Finalizações: ${atleta.finalizacoes}.`,
+      `Conversão: ${conversao}.`,
+      `Passes completos: ${atleta.passesCompletos} de ${atleta.passesTentados}.`,
+      `Desarmes ganhos: ${atleta.desarmesGanhos} de ${atleta.desarmesTentados}.`,
+      `Interceptações registradas: ${atleta.interceptacoes}.`,
+      `Dribles completos: ${atleta.driblesCompletos} de ${atleta.driblesTentados}.`,
+    ].join('\n');
   });
 
   const analise = [
     `Comparativo estatístico · ${atletaA.nome} × ${atletaB.nome}`,
     `Fonte: ${dados.fonte}`,
-`Partida de ${atletaA.nome}: ${atletaA.partidaId ?? dados.partidaId}`,
-`Partida de ${atletaB.nome}: ${atletaB.partidaId ?? dados.partidaId}`,
+    `Partida de ${atletaA.nome}: ${atletaA.partidaId ?? dados.partidaId}`,
+    `Partida de ${atletaB.nome}: ${atletaB.partidaId ?? dados.partidaId}`,
     'Recorte: tempo regulamentar e prorrogação, quando disputada. Disputa de pênaltis excluída.',
     '',
-    ...resumo,
+    resumo.join('\n\n'),
     '',
-    'O relatório descreve o desempenho nas finalizações desta partida.',
+    'Os totais não são ajustados por minutos jogados.',
+    'Interceptações incluem todos os resultados registrados nesse tipo de evento.',
+    'Desarmes ganhos incluem Won, Success, Success In Play e Success Out.',
+    'O relatório descreve ações dos jogos selecionados.',
   ].join('\n');
 
   try {
@@ -141,9 +234,16 @@ async function salvarRelatorio(res, dados) {
       ]
     );
 
-    return res.status(201).json({ ...rows[0], analise });
+    return res.status(201).json({
+      ...rows[0],
+      analise,
+    });
   } catch (erro) {
-    console.error('Erro ao salvar relatório StatsBomb:', erro.message);
+    console.error(
+      'Erro ao salvar relatório StatsBomb:',
+      erro.message
+    );
+
     return res.status(500).json({
       erro: 'Não foi possível salvar o relatório no histórico.',
     });
@@ -152,7 +252,10 @@ async function salvarRelatorio(res, dados) {
 
 router.get('/catalogo', rota(async (_req, res) => {
   const catalogo = await lerArquivo('competitions.json');
-  if (!catalogo) throw new Error('Catálogo indisponível.');
+
+  if (!catalogo) {
+    throw new Error('Catálogo indisponível.');
+  }
 
   const temporadas = catalogo.map((item) => ({
     id: `${item.competition_id}:${item.season_id}`,
@@ -161,7 +264,10 @@ router.get('/catalogo', rota(async (_req, res) => {
     temporada: item.season_name,
   }));
 
-  return res.json({ fonte: FONTE, temporadas });
+  return res.json({
+    fonte: FONTE,
+    temporadas,
+  });
 }));
 
 router.get('/partidas', rota(async (req, res) => {
@@ -174,19 +280,29 @@ router.get('/partidas', rota(async (req, res) => {
     });
   }
 
-  const jogos = await lerArquivo(`matches/${competicaoId}/${temporadaId}.json`);
+  const jogos = await lerArquivo(
+    `matches/${competicaoId}/${temporadaId}.json`
+  );
+
   if (!jogos) {
-    return res.status(404).json({ erro: 'Temporada não encontrada.' });
+    return res.status(404).json({
+      erro: 'Temporada não encontrada.',
+    });
   }
 
-  const partidas = jogos.map((jogo) => ({
-    id: jogo.match_id,
-    data: jogo.match_date,
-    mandante: jogo.home_team.home_team_name,
-    visitante: jogo.away_team.away_team_name,
-  })).sort((a, b) => b.data.localeCompare(a.data));
+  const partidas = jogos
+    .map((jogo) => ({
+      id: jogo.match_id,
+      data: jogo.match_date,
+      mandante: jogo.home_team.home_team_name,
+      visitante: jogo.away_team.away_team_name,
+    }))
+    .sort((a, b) => b.data.localeCompare(a.data));
 
-  return res.json({ fonte: FONTE, partidas });
+  return res.json({
+    fonte: FONTE,
+    partidas,
+  });
 }));
 
 router.get('/jogadores', rota(async (req, res) => {
@@ -202,8 +318,11 @@ router.get('/jogadores', rota(async (req, res) => {
   }
 
   const atletas = await elenco(partidaId);
+
   if (!atletas) {
-    return res.status(404).json({ erro: 'Escalação não encontrada.' });
+    return res.status(404).json({
+      erro: 'Escalação não encontrada.',
+    });
   }
 
   const jogadores = atletas.filter((atleta) =>
@@ -211,13 +330,19 @@ router.get('/jogadores', rota(async (req, res) => {
     normalizar(atleta.nomeCompleto).includes(nome)
   );
 
-  return res.json({ fonte: FONTE, partidaId, jogadores });
+  return res.json({
+    fonte: FONTE,
+    partidaId,
+    jogadores,
+  });
 }));
 
 const consultarDupla = rota(async (req, res) => {
   const salvar = req.method === 'POST';
   const parametros = salvar ? (req.body ?? {}) : req.query;
-  const partidaId = lerId(parametros.partidaId ?? (salvar ? null : FINAL));
+  const partidaId = lerId(
+    parametros.partidaId ?? (salvar ? null : FINAL)
+  );
   const idA = lerId(parametros.atletaA);
   const idB = lerId(parametros.atletaB);
 
@@ -237,9 +362,15 @@ const consultarDupla = rota(async (req, res) => {
     });
   }
 
-  const dados = await calcularComparacao(partidaId, [atletaA, atletaB]);
+  const dados = await calcularComparacao(
+    partidaId,
+    [atletaA, atletaB]
+  );
+
   if (!dados) {
-    return res.status(404).json({ erro: 'Eventos não encontrados.' });
+    return res.status(404).json({
+      erro: 'Eventos não encontrados.',
+    });
   }
 
   return salvar ? salvarRelatorio(res, dados) : res.json(dados);
@@ -255,7 +386,9 @@ router.get('/final-2022', rota(async (_req, res) => {
   ]);
 
   if (!dados) {
-    return res.status(404).json({ erro: 'Eventos da final não encontrados.' });
+    return res.status(404).json({
+      erro: 'Eventos da final não encontrados.',
+    });
   }
 
   return res.json(dados);
@@ -273,7 +406,10 @@ router.get('/busca-global', async (req, res) => {
   }
 
   try {
-    const arquivo = path.resolve(__dirname, '../../statsbomb-indice.json');
+    const arquivo = path.resolve(
+      __dirname,
+      '../../statsbomb-indice.json'
+    );
     const atletas = JSON.parse(await readFile(arquivo, 'utf8'));
 
     const jogadores = atletas
@@ -289,9 +425,13 @@ router.get('/busca-global', async (req, res) => {
         totalEscalacoes: atleta.partidas.length,
       }));
 
-    return res.json({ fonte: FONTE, jogadores });
+    return res.json({
+      fonte: FONTE,
+      jogadores,
+    });
   } catch (erro) {
     console.error('Erro ao ler o índice StatsBomb:', erro.message);
+
     return res.status(503).json({
       erro: 'Índice de atletas indisponível. Gere o índice e tente novamente.',
     });
@@ -302,38 +442,62 @@ router.get('/jogadores/:id/partidas', async (req, res) => {
   const id = lerId(req.params.id);
 
   if (!id) {
-    return res.status(400).json({ erro: 'Informe um ID de atleta válido.' });
+    return res.status(400).json({
+      erro: 'Informe um ID de atleta válido.',
+    });
   }
 
   try {
-    const arquivo = path.resolve(__dirname, '../../statsbomb-indice.json');
+    const arquivo = path.resolve(
+      __dirname,
+      '../../statsbomb-indice.json'
+    );
     const atletas = JSON.parse(await readFile(arquivo, 'utf8'));
     const atleta = atletas.find((item) => item.id === id);
 
     if (!atleta) {
-      return res.status(404).json({ erro: 'Atleta não encontrado no catálogo.' });
+      return res.status(404).json({
+        erro: 'Atleta não encontrado no catálogo.',
+      });
     }
 
     return res.json({
       fonte: FONTE,
-      jogador: { id: atleta.id, nome: atleta.nome },
+      jogador: {
+        id: atleta.id,
+        nome: atleta.nome,
+      },
       partidas: atleta.partidas,
     });
   } catch (erro) {
-    console.error('Erro ao listar partidas do atleta:', erro.message);
-    return res.status(503).json({ erro: 'Índice de atletas indisponível.' });
+    console.error(
+      'Erro ao listar partidas do atleta:',
+      erro.message
+    );
+
+    return res.status(503).json({
+      erro: 'Índice de atletas indisponível.',
+    });
   }
 });
 
 async function consultarAtletaNaPartida(atletaId, partidaId) {
   const atletas = await elenco(partidaId);
   const atleta = atletas?.find((item) => item.id === atletaId);
+
   if (!atleta) return null;
 
-  const resultado = await calcularComparacao(partidaId, [atleta]);
+  const resultado = await calcularComparacao(
+    partidaId,
+    [atleta]
+  );
+
   if (!resultado) return null;
 
-  return { ...resultado.jogadores[0], partidaId };
+  return {
+    ...resultado.jogadores[0],
+    partidaId,
+  };
 }
 
 router.get('/comparar-partidas', rota(async (req, res) => {
@@ -342,7 +506,13 @@ router.get('/comparar-partidas', rota(async (req, res) => {
   const atletaB = lerId(req.query.atletaB);
   const partidaB = lerId(req.query.partidaB);
 
-  if (!atletaA || !partidaA || !atletaB || !partidaB || atletaA === atletaB) {
+  if (
+    !atletaA ||
+    !partidaA ||
+    !atletaB ||
+    !partidaB ||
+    atletaA === atletaB
+  ) {
     return res.status(400).json({
       erro: 'Selecione dois atletas diferentes e uma partida para cada um.',
     });
@@ -359,7 +529,10 @@ router.get('/comparar-partidas', rota(async (req, res) => {
     });
   }
 
-  return res.json({ fonte: FONTE, jogadores: [jogadorA, jogadorB] });
+  return res.json({
+    fonte: FONTE,
+    jogadores: [jogadorA, jogadorB],
+  });
 }));
 
 router.post('/relatorios-partidas', rota(async (req, res) => {

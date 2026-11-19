@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import './PlantelPage.css';
 
 const POSICOES = [
   'GOLEIRO', 'ZAGUEIRO', 'LATERAL-DIREITO', 'LATERAL-ESQUERDO',
@@ -7,6 +8,37 @@ const POSICOES = [
   'MEIA-ATACANTE', 'PONTA-DIREITA', 'PONTA-ESQUERDA',
   'SEGUNDO ATACANTE', 'CENTROAVANTE',
 ];
+
+const FORM_ATLETA_VAZIO = {
+  nome: '', posicao: '', idade: '', equipe_id: '', nome_esportivo: '',
+  data_nascimento: '', nacionalidade: '', altura_m: '', peso_kg: '',
+  pe_dominante: '', posicao_secundaria: '', numero_camisa: '', observacoes: '',
+};
+
+const FORM_CLUBE_VAZIO = {
+  nome: '', cidade: '', nome_abreviado: '', sigla: '', estado: '',
+  pais: '', ano_fundacao: '', estadio: '', cores: '', email: '',
+  telefone: '', site: '', observacoes: '',
+};
+
+const CAMPOS_CLUBE = [
+  { nome: 'nome', titulo: 'Nome do clube *', limite: 150, exemplo: 'EX.: REAL MADRID' },
+  { nome: 'nome_abreviado', titulo: 'Nome abreviado', limite: 100, exemplo: 'EX.: REAL MADRID' },
+  { nome: 'sigla', titulo: 'Sigla', limite: 10, exemplo: 'EX.: RMA' },
+  { nome: 'cidade', titulo: 'Cidade / sede', limite: 150, exemplo: 'EX.: TERESINA' },
+  { nome: 'estado', titulo: 'Estado / região', limite: 100, exemplo: 'EX.: PIAUÍ' },
+  { nome: 'pais', titulo: 'País', limite: 100, exemplo: 'EX.: BRASIL' },
+  { nome: 'ano_fundacao', titulo: 'Ano de fundação', tipo: 'number', exemplo: 'EX.: 2020' },
+  { nome: 'estadio', titulo: 'Estádio / local de treinamento (opcional)', limite: 150 },
+  { nome: 'cores', titulo: 'Cores do clube (opcional)', limite: 100, exemplo: 'EX.: AZUL E BRANCO' },
+  { nome: 'email', titulo: 'E-mail de contato (opcional)', tipo: 'email', limite: 254, exemplo: 'contato@clube.com.br' },
+  { nome: 'telefone', titulo: 'Telefone (opcional)', tipo: 'tel', limite: 30, exemplo: '(86) 99999-9999' },
+  { nome: 'site', titulo: 'Site oficial (opcional)', tipo: 'url', limite: 255, exemplo: 'https://meuclube.com.br' },
+];
+
+const CLUBE_MAIUSCULOS = new Set([
+  'nome', 'nome_abreviado', 'sigla', 'cidade', 'estado', 'pais', 'estadio', 'cores',
+]);
 
 export function PlantelPage() {
   const [jogadores, setJogadores] = useState([]);
@@ -16,17 +48,9 @@ export function PlantelPage() {
   const [mensagem, setMensagem] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const [formJogador, setFormJogador] = useState({
-    nome: '',
-    posicao: '',
-    idade: '',
-    equipe_id: '',
-  });
+  const [formJogador, setFormJogador] = useState(FORM_ATLETA_VAZIO);
 
-  const [formClube, setFormClube] = useState({
-    nome: '',
-    cidade: '',
-  });
+  const [formClube, setFormClube] = useState(FORM_CLUBE_VAZIO);
 
   useEffect(() => {
     carregarDados();
@@ -82,15 +106,29 @@ export function PlantelPage() {
       return;
     }
 
+    const anoTexto = formClube.ano_fundacao.trim();
+    const ano = anoTexto ? Number(anoTexto) : null;
+    if (anoTexto && (!Number.isInteger(ano) || ano < 1 || ano > new Date().getFullYear())) {
+      setErro('Informe um ano de fundação válido, até o ano atual.');
+      return;
+    }
+
+    const dadosClube = Object.fromEntries(
+      Object.entries(formClube).map(([campo, valor]) => {
+        const texto = valor.trim();
+        return [campo, texto
+          ? (CLUBE_MAIUSCULOS.has(campo) ? texto.toLocaleUpperCase('pt-BR') : texto)
+          : null];
+      })
+    );
+    dadosClube.ano_fundacao = ano;
+
     setSalvando(true);
 
     try {
-      await api.post('/equipes', {
-        nome,
-        cidade: formClube.cidade.trim().toLocaleUpperCase('pt-BR') || null,
-      });
+      await api.post('/equipes', dadosClube);
 
-      setFormClube({ nome: '', cidade: '' });
+      setFormClube(FORM_CLUBE_VAZIO);
       setMensagem('Equipe cadastrada com sucesso!');
 
       await carregarDados();
@@ -130,17 +168,37 @@ export function PlantelPage() {
     const idade = formJogador.idade.trim();
 
     if (
-      idade &&
-      (!Number.isSafeInteger(Number(idade)) || Number(idade) < 1)
+      !idade ||
+      !Number.isSafeInteger(Number(idade)) || Number(idade) < 1
     ) {
       setErro('Informe uma idade inteira a partir de 1.');
       return;
     }
 
+    const formatoDecimal = /^\d+(?:[,.]\d{1,2})?$/;
+    const alturaTexto = formJogador.altura_m.trim();
+    const pesoTexto = formJogador.peso_kg.trim();
+    const alturaMetros = alturaTexto ? Number(alturaTexto.replace(',', '.')) : null;
+    const pesoKg = pesoTexto ? Number(pesoTexto.replace(',', '.')) : null;
+
+    if (alturaTexto && (!formatoDecimal.test(alturaTexto) || alturaMetros <= 0 || alturaMetros > 3)) {
+      setErro('Informe a altura em metros, como 1,80, até duas casas decimais.');
+      return;
+    }
+    if (pesoTexto && (!formatoDecimal.test(pesoTexto) || pesoKg <= 0 || pesoKg > 999.99)) {
+      setErro('Informe o peso em quilos, como 75,5, até duas casas decimais.');
+      return;
+    }
+    const dadosAtleta = { ...formJogador };
+    delete dadosAtleta.altura_m;
+
     setSalvando(true);
 
     try {
       await api.post('/jogadores', {
+        ...dadosAtleta,
+        altura_cm: alturaMetros === null ? null : Math.round(alturaMetros * 100),
+        peso_kg: pesoKg,
         nome,
         posicao,
         idade: idade ? Number(idade) : null,
@@ -149,12 +207,7 @@ export function PlantelPage() {
           : null,
       });
 
-      setFormJogador({
-        nome: '',
-        posicao: '',
-        idade: '',
-        equipe_id: '',
-      });
+      setFormJogador(FORM_ATLETA_VAZIO);
 
       setMensagem('Jogador cadastrado com sucesso!');
 
@@ -175,235 +228,137 @@ export function PlantelPage() {
   }
 
   return (
-    <div style={pageStyle}>
-      <div style={bannerStyle}>
-        <div>
-         
+    <div className="plantel-pagina">
+      <header className="plantel-topo">
+        <div><h1>Gestão de Plantel</h1><p>Cadastre clubes e atletas e acompanhe a composição do plantel.</p></div>
+        <dl className="plantel-totais">
+          <div><dt>Atletas</dt><dd>{jogadores.length}</dd></div>
+          <div><dt>Clubes</dt><dd>{equipes.length}</dd></div>
+        </dl>
+      </header>
+      {erro && <p role="alert" className="plantel-aviso plantel-erro">{erro}</p>}
+      {mensagem && <p role="status" className="plantel-aviso">{mensagem}</p>}
 
-          <h1 style={{ ...titleStyle, color: '#ffffff' }}>GESTÃO DE PLANTEL</h1>
-          <p style={subtitleStyle}>
-            Cadastre clubes e atletas e acompanhe a composição do plantel.
-          </p>
-        </div>
-
-        <div style={countersStyle}>
-          <div style={counterCardStyle}>
-            <h2 style={counterNumberStyle}>{jogadores.length}</h2>
-            <span style={counterLabelStyle}>ATLETAS</span>
-          </div>
-
-          <div style={counterCardStyle}>
-            <h2 style={counterNumberStyle}>{equipes.length}</h2>
-            <span style={counterLabelStyle}>EQUIPES</span>
-          </div>
-        </div>
-      </div>
-
-      {erro && (
-        <div role="alert" style={errorStyle}>
-          {erro}
-          <button
-            type="button"
-            onClick={() => {
-              setErro('');
-              carregarDados();
-            }}
-            style={smallButtonStyle}
-          >
-            Tentar novamente
-          </button>
-        </div>
-      )}
-
-      {mensagem && (
-        <div role="status" style={successStyle}>
-          {mensagem}
-        </div>
-      )}
-
-      <div style={formsGridStyle}>
-        <section style={cardStyle}>
-          <h3 style={clubTitleStyle}>🛡️ CADASTRO DE CLUBE</h3>
-
-          <form
-            onSubmit={handleCreateClube}
-            style={formStyle}
-          >
-            <input
-              type="text"
-              placeholder="Nome do Clube (ex: Real Madrid)"
-              value={formClube.nome}
-              onChange={(e) =>
-                setFormClube({
-                  ...formClube,
-                  nome: e.target.value.toLocaleUpperCase('pt-BR'),
-                })
-              }
-              required
-              maxLength={100}
-              style={inputStyle}
-            />
-
-            <input
-              type="text"
-              placeholder="Cidade / Sede"
-              value={formClube.cidade}
-              onChange={(e) =>
-                setFormClube({
-                  ...formClube,
-                  cidade: e.target.value.toLocaleUpperCase('pt-BR'),
-                })
-              }
-              maxLength={100}
-              style={inputStyle}
-            />
-
-            <button
-              type="submit"
-              disabled={salvando}
-              style={{
-                ...btnPrimaryStyle,
-                opacity: salvando ? 0.6 : 1,
-              }}
-            >
-              {salvando ? 'SALVANDO...' : 'CRIAR CLUBE'}
-            </button>
-          </form>
-        </section>
-
-        <section style={cardStyle}>
-          <h3 style={playerTitleStyle}>⭐ CADASTRO DE ATLETA</h3>
-
-          <form
-            onSubmit={handleCreateJogador}
-            style={formStyle}
-          >
-            <input
-              type="text"
-              placeholder="Nome do Jogador"
-              value={formJogador.nome}
-              onChange={(e) =>
-                setFormJogador({
-                  ...formJogador,
-                  nome: e.target.value.toLocaleUpperCase('pt-BR'),
-                })
-              }
-              required
-              maxLength={100}
-              style={inputStyle}
-            />
-
-            <div style={fieldsRowStyle}>
-              <select
-                aria-label="Posição do jogador"
-                value={formJogador.posicao}
-                onChange={(e) =>
-                  setFormJogador({
-                    ...formJogador,
-                    posicao: e.target.value,
-                  })
-                }
-                required
-                style={{ ...inputStyle, flex: '1 1 180px', minWidth: 0 }}
-              >
-                <option value="">Selecione a posição</option>
-                {POSICOES.map((posicao) => (
-                  <option key={posicao} value={posicao}>{posicao}</option>
+      <div className="plantel-formularios" style={{ alignItems: 'stretch' }}>
+        <section className="plantel-painel" aria-labelledby="clube-titulo" style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+          <header className="plantel-secao-topo"><span className="plantel-simbolo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 3 7v6c0 4 9 8 9 8s9-4 9-8V7Z" /></svg></span><h2 id="clube-titulo">Cadastro de clube</h2></header>
+          <form onSubmit={handleCreateClube} style={{ display: 'flex', flex: 1, minWidth: 0 }}>
+            <fieldset disabled={salvando} style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, width: '100%' }}>
+              <div className="plantel-campos-duplos">
+                {CAMPOS_CLUBE.map(({ nome, titulo, tipo = 'text', limite, exemplo }) => (
+                  <label key={nome}>
+                    {titulo}
+                    <input
+                      name={nome}
+                      type={tipo}
+                      required={nome === 'nome'}
+                      maxLength={limite}
+                      placeholder={exemplo}
+                      min={tipo === 'number' ? 1 : undefined}
+                      max={tipo === 'number' ? new Date().getFullYear() : undefined}
+                      step={tipo === 'number' ? 1 : undefined}
+                      value={formClube[nome]}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setFormClube((anterior) => ({
+                          ...anterior,
+                          [nome]: CLUBE_MAIUSCULOS.has(nome)
+                            ? valor.toLocaleUpperCase('pt-BR') : valor,
+                        }));
+                      }}
+                    />
+                  </label>
                 ))}
-              </select>
+              </div>
+              <label>
+                Observações
+                <textarea rows={3} maxLength={3000}
+                  placeholder="Informações adicionais sobre o clube"
+                  value={formClube.observacoes}
+                  onChange={(e) => setFormClube((anterior) => ({ ...anterior, observacoes: e.target.value }))}
+                />
+              </label>
+              <button className="plantel-secundario" type="submit" style={{ marginTop: 'auto' }}>{salvando ? 'Salvando…' : 'Cadastrar clube'}</button>
+            </fieldset>
+          </form>
+        </section>
 
-              <input
-                type="number"
-                placeholder="Idade"
-                aria-label="Idade do jogador (opcional)"
-                min="1"
-                step="1"
-                value={formJogador.idade}
-                onChange={(e) =>
-                  setFormJogador({
-                    ...formJogador,
-                    idade: e.target.value,
-                  })
-                }
-                style={{ ...inputStyle, width: '100px' }}
-              />
-            </div>
-
-            <select
-              value={formJogador.equipe_id}
-              onChange={(e) =>
-                setFormJogador({
-                  ...formJogador,
-                  equipe_id: e.target.value,
-                })
-              }
-              style={inputStyle}
-            >
-              <option value="">Vincular a um clube (opcional)</option>
-
-              {equipes.map((eq) => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.nome}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="submit"
-              disabled={salvando}
-              style={{
-                ...btnOrangeStyle,
-                opacity: salvando ? 0.6 : 1,
-              }}
-            >
-              {salvando ? 'SALVANDO...' : 'CADASTRAR ATLETA'}
-            </button>
+        <section className="plantel-painel" aria-labelledby="atleta-titulo" style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+          <header className="plantel-secao-topo"><span className="plantel-simbolo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21v-3a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v3"/></svg></span><h2 id="atleta-titulo">Cadastro de atleta</h2></header>
+          <form onSubmit={handleCreateJogador} style={{ display: 'flex', flex: 1, minWidth: 0 }}>
+            <fieldset disabled={salvando} style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, width: '100%' }}>
+              <label>Nome do atleta<input required maxLength={100} placeholder="NOME COMPLETO" value={formJogador.nome} onChange={(e) => setFormJogador({ ...formJogador, nome: e.target.value.toLocaleUpperCase('pt-BR') })} /></label>
+              <div className="plantel-campos-linha">
+                <label>Posição<select required value={formJogador.posicao} onChange={(e) => setFormJogador({ ...formJogador, posicao: e.target.value })}><option value="">Selecione a posição</option>{POSICOES.map((p) => <option key={p}>{p}</option>)}</select></label>
+                <label>Idade *<input required type="number" min="1" step="1" placeholder="Ex.: 22" readOnly={Boolean(formJogador.data_nascimento)} value={formJogador.idade} onChange={(e) => setFormJogador({ ...formJogador, idade: e.target.value })} /></label>
+              </div>
+              <label>Clube<select value={formJogador.equipe_id} onChange={(e) => setFormJogador({ ...formJogador, equipe_id: e.target.value })}><option value="">Sem clube (opcional)</option>{equipes.map((eq) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}</select></label>
+              <label>Nome esportivo<input maxLength={100} value={formJogador.nome_esportivo} onChange={(e) => setFormJogador({ ...formJogador, nome_esportivo: e.target.value.toLocaleUpperCase('pt-BR') })} /></label>
+              <div className="plantel-campos-duplos">
+                <label>Data de nascimento<input type="date" value={formJogador.data_nascimento} onChange={(e) => {
+                  const data = e.target.value;
+                  let idadeCalculada = '';
+                  if (data) {
+                    const [ano, mes, dia] = data.split('-').map(Number);
+                    const hoje = new Date();
+                    let anos = hoje.getFullYear() - ano;
+                    if (hoje.getMonth() + 1 < mes || (hoje.getMonth() + 1 === mes && hoje.getDate() < dia)) anos--;
+                    idadeCalculada = String(anos);
+                  }
+                  setFormJogador((anterior) => ({ ...anterior, data_nascimento: data, idade: idadeCalculada }));
+                }} /></label>
+                <label>Nacionalidade<input maxLength={100} value={formJogador.nacionalidade} onChange={(e) => setFormJogador({ ...formJogador, nacionalidade: e.target.value.toLocaleUpperCase('pt-BR') })} /></label>
+              </div>
+              <div className="plantel-campos-duplos">
+                <label>
+                  Altura (m)
+                  <input type="text" inputMode="decimal" maxLength={6}
+                    placeholder="Ex.: 1,80" pattern="[0-9]+([,.][0-9]{1,2})?"
+                    title="Altura em metros, como 1,80"
+                    value={formJogador.altura_m}
+                    onChange={(e) => setFormJogador({ ...formJogador, altura_m: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Peso (kg)
+                  <input type="text" inputMode="decimal" maxLength={6}
+                    placeholder="Ex.: 75,5" pattern="[0-9]+([,.][0-9]{1,2})?"
+                    title="Peso em quilos, como 75,5"
+                    value={formJogador.peso_kg}
+                    onChange={(e) => setFormJogador({ ...formJogador, peso_kg: e.target.value })}
+                  />
+                </label>
+              </div>
+              <div className="plantel-campos-duplos">
+                <label>Pé dominante<select value={formJogador.pe_dominante} onChange={(e) => setFormJogador({ ...formJogador, pe_dominante: e.target.value })}><option value="">Não informado</option><option value="DIREITO">Direito</option><option value="ESQUERDO">Esquerdo</option><option value="AMBOS">Ambos</option></select></label>
+                <label>Posição secundária<select value={formJogador.posicao_secundaria} onChange={(e) => setFormJogador({ ...formJogador, posicao_secundaria: e.target.value })}><option value="">Não informada</option>{POSICOES.map((p) => <option key={p}>{p}</option>)}</select></label>
+              </div>
+              <label>Número da camisa<input type="number" min="1" max="99" step="1" value={formJogador.numero_camisa} onChange={(e) => setFormJogador({ ...formJogador, numero_camisa: e.target.value })} /></label>
+              <label>Observações<textarea rows={3} maxLength={3000} value={formJogador.observacoes} onChange={(e) => setFormJogador({ ...formJogador, observacoes: e.target.value })} /></label>
+              <button className="plantel-principal" type="submit" style={{ marginTop: 'auto' }}>{salvando ? 'Salvando…' : 'Cadastrar atleta'}</button>
+            </fieldset>
           </form>
         </section>
       </div>
 
-      <section style={cardStyle}>
-        <div style={listHeaderStyle}>
-          <h3 style={listTitleStyle}>ATLETAS CADASTRADOS</h3>
-
-          <button
-            type="button"
-            onClick={carregarDados}
-            disabled={loading}
-            style={refreshButtonStyle}
-          >
-            {loading ? 'Carregando...' : '↻ Atualizar lista'}
-          </button>
-        </div>
-
-        {loading ? (
-          <div style={emptyStyle}>Carregando jogadores e equipes...</div>
-        ) : jogadores.length === 0 ? (
-          <div style={emptyStyle}>
-            Nenhum atleta encontrado. Use o formulário acima para cadastrar
-            o primeiro jogador.
-          </div>
-        ) : (
-          <div style={playersGridStyle}>
+      <section className="plantel-painel" aria-labelledby="plantel-lista">
+        <div className="plantel-acoes"><h2 id="plantel-lista">Atletas cadastrados</h2><button type="button" onClick={carregarDados} disabled={loading || salvando}>{loading ? 'Carregando…' : 'Atualizar lista'}</button></div>
+        {loading ? <p role="status">Carregando plantel…</p> : jogadores.length === 0 ? <p className="plantel-vazio">Cadastre o primeiro atleta para começar.</p> : (
+          <div className="plantel-atletas">
             {jogadores.map((j) => (
-              <article key={j.id} style={playerCardStyle}>
-                <div style={playerAvatarStyle}>
-                  {j.nome?.trim()?.charAt(0)?.toUpperCase() || '?'}
-                </div>
-
-                <h4 style={playerNameStyle}>{j.nome}</h4>
-
-                <p style={playerInfoStyle}>
-                  Posição: {j.posicao || 'Não informada'}
-                </p>
-
-                <p style={playerInfoStyle}>
-                  Idade: {j.idade ?? 'Não informada'}
-                </p>
-
-                <p style={teamInfoStyle}>
-                  Clube: {j.equipe_nome || 'Sem equipe'}
-                </p>
+              <article key={j.id} className="plantel-atleta">
+                <div className="plantel-atleta-topo"><span className="plantel-avatar" aria-hidden="true">{j.nome?.trim().charAt(0).toUpperCase() || '?'}</span><span className="plantel-posicao">{j.posicao || 'Não informada'}</span></div>
+                <h3>{j.nome_esportivo || j.nome}</h3>
+                <details className="plantel-ficha"><summary>Ver ficha do atleta</summary><dl>
+                  <div><dt>Nome</dt><dd>{j.nome}</dd></div>
+                  <div><dt>Nacionalidade</dt><dd>{j.nacionalidade || 'Não informada'}</dd></div>
+                  <div><dt>Altura</dt><dd>{j.altura_cm ? `${(Number(j.altura_cm) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} m` : 'Não informada'}</dd></div>
+                  <div><dt>Peso</dt><dd>{j.peso_kg ? `${Number(j.peso_kg).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg` : 'Não informado'}</dd></div>
+                  <div><dt>Pé dominante</dt><dd>{j.pe_dominante || 'Não informado'}</dd></div>
+                  <div><dt>Posição secundária</dt><dd>{j.posicao_secundaria || 'Não informada'}</dd></div>
+                  <div><dt>Camisa</dt><dd>{j.numero_camisa ?? 'Não informada'}</dd></div>
+                </dl>{j.observacoes && <p>{j.observacoes}</p>}</details>
+                <dl><div><dt>Idade</dt><dd>{j.idade == null ? 'Não informada' : `${j.idade} anos`}</dd></div><div><dt>Clube</dt><dd>{j.equipe_nome || equipes.find((eq) => String(eq.id) === String(j.equipe_id))?.nome || 'Sem clube'}</dd></div></dl>
               </article>
             ))}
           </div>
@@ -412,255 +367,5 @@ export function PlantelPage() {
     </div>
   );
 }
-
-const pageStyle = {
-  color: '#fff',
-  width: '100%',
-  boxSizing: 'border-box',
-};
-
-const bannerStyle = {
-  background: 'radial-gradient(ellipse at top right, #b8f34a26, transparent 60%), #131d1c',
-  border: '1px solid #293440',
-  borderRadius: '12px',
-  padding: '2rem',
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '1.5rem',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '2rem',
-};
-
-const badgeStyle = {
-  display: 'inline-block',
-  backgroundColor: '#b8f34a',
-  color: '#000',
-  fontWeight: 'bold',
-  fontSize: '0.75rem',
-  padding: '0.3rem 0.6rem',
-  borderRadius: '4px',
-};
-
-const titleStyle = {
-  margin: '0.7rem 0',
-  fontSize: 'clamp(1.5rem, 4vw, 2.2rem)',
-  letterSpacing: '1px',
-};
-
-const subtitleStyle = {
-  color: '#aebaca',
-  margin: 0,
-  lineHeight: 1.6,
-};
-
-const countersStyle = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '1rem',
-};
-
-const counterCardStyle = {
-  backgroundColor: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  padding: '1rem 1.5rem',
-  borderRadius: '8px',
-  textAlign: 'center',
-  minWidth: '75px',
-};
-
-const counterNumberStyle = {
-  margin: 0,
-  color: '#7cbfff',
-  fontSize: '1.8rem',
-  fontFamily: 'Rajdhani, system-ui, sans-serif',
-};
-
-const counterLabelStyle = {
-  fontSize: '0.75rem',
-  color: '#aebaca',
-  fontWeight: 'bold',
-};
-
-const formsGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-  gap: '1.5rem',
-  marginBottom: '2rem',
-};
-
-const cardStyle = {
-  backgroundColor: '#151c25',
-  border: '1px solid #293440',
-  borderRadius: '10px',
-  padding: '1.5rem',
-  marginBottom: '1.5rem',
-  minWidth: 0,
-};
-
-const clubTitleStyle = {
-  color: '#7cbfff',
-  marginTop: 0,
-  fontSize: '1.1rem',
-};
-
-const playerTitleStyle = {
-  color: '#b8f34a',
-  marginTop: 0,
-  fontSize: '1.1rem',
-};
-
-const formStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem',
-};
-
-const inputStyle = {
-  boxSizing: 'border-box',
-  width: '100%',
-  backgroundColor: '#0d1117',
-  border: '1px solid #293440',
-  color: '#fff',
-  padding: '0.85rem',
-  borderRadius: '6px',
-  colorScheme: 'dark',
-};
-
-const fieldsRowStyle = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '1rem',
-};
-
-const btnPrimaryStyle = {
-  backgroundColor: '#0088cc',
-  color: '#fff',
-  border: 'none',
-  padding: '0.9rem',
-  borderRadius: '6px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-};
-
-const btnOrangeStyle = {
-  backgroundColor: '#b8f34a',
-  color: '#101608',
-  border: 'none',
-  padding: '0.9rem',
-  borderRadius: '6px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-};
-
-const errorStyle = {
-  backgroundColor: '#55202a',
-  border: '1px solid #e63946',
-  color: '#fff',
-  padding: '1rem',
-  borderRadius: '6px',
-  marginBottom: '1.5rem',
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '1rem',
-};
-
-const successStyle = {
-  backgroundColor: '#103d32',
-  border: '1px solid #20a779',
-  color: '#b6ffe1',
-  padding: '1rem',
-  borderRadius: '6px',
-  marginBottom: '1.5rem',
-};
-
-const smallButtonStyle = {
-  backgroundColor: '#151c25',
-  color: '#fff',
-  border: '1px solid #667085',
-  borderRadius: '5px',
-  padding: '0.5rem 0.75rem',
-  cursor: 'pointer',
-};
-
-const listHeaderStyle = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '1rem',
-  marginBottom: '1.5rem',
-};
-
-const listTitleStyle = {
-  margin: 0,
-  letterSpacing: '1px',
-};
-
-const refreshButtonStyle = {
-  backgroundColor: '#171e37',
-  color: '#7cbfff',
-  border: '1px solid #26365d',
-  borderRadius: '6px',
-  padding: '0.6rem 0.9rem',
-  cursor: 'pointer',
-};
-
-const emptyStyle = {
-  textAlign: 'center',
-  padding: '3rem 1rem',
-  color: '#aebaca',
-  backgroundColor: '#0d1117',
-  borderRadius: '8px',
-  lineHeight: 1.6,
-};
-
-const playersGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))',
-  gap: '1rem',
-};
-
-const playerCardStyle = {
-  backgroundColor: '#0d1117',
-  border: '1px solid #293440',
-  padding: '1.2rem',
-  borderRadius: '8px',
-  overflowWrap: 'anywhere',
-};
-
-const playerAvatarStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '46px',
-  height: '46px',
-  borderRadius: '50%',
-  backgroundColor: '#182441',
-  color: '#7cbfff',
-  fontSize: '1.3rem',
-  fontWeight: 'bold',
-  marginBottom: '0.8rem',
-};
-
-const playerNameStyle = {
-  margin: '0 0 0.8rem',
-  color: '#b8f34a',
-  fontSize: '1.05rem',
-};
-
-const playerInfoStyle = {
-  margin: '0.4rem 0',
-  color: '#aebaca',
-  fontSize: '0.9rem',
-};
-
-const teamInfoStyle = {
-  margin: '0.4rem 0',
-  color: '#7cbfff',
-  fontSize: '0.9rem',
-};
 
 export default PlantelPage;

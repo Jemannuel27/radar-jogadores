@@ -1,0 +1,377 @@
+/* Página e estrutura */
+.inicio-radar {
+  min-height: 100vh;
+  background: #0d1117;
+  color: #f0f4f8;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.inicio-radar *,
+.inicio-radar *::before,
+.inicio-radar *::after {
+  box-sizing: border-box;
+}
+
+.inicio-header,
+.inicio-conteudo,
+.inicio-footer {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+/* Cabeçalho */
+.inicio-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-block: 1.25rem;
+}
+
+.inicio-header img {
+  display: block;
+  width: clamp(280px, 32vw, 380px);
+  max-width: 100%;
+  height: auto;
+}
+
+.inicio-header nav,
+.inicio-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Botões */
+.inicio-radar button,
+.acesso-publico .voltar-inicio {
+  padding: 0.75rem 1rem;
+  border: 1px solid #344150;
+  border-radius: 10px;
+  background: transparent;
+  color: #f0f4f8;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inicio-radar button.inicio-destaque {
+  border-color: #b8f34a;
+  background: #b8f34a;
+  color: #ffffff;
+}
+
+.inicio-radar button:hover,
+.acesso-publico .voltar-inicio:hover {
+  border-color: #b8f34a;
+}
+
+.inicio-radar button:focus-visible,
+.acesso-publico .voltar-inicio:focus-visible {
+  outline: 2px solid #b8f34a;
+  outline-offset: 4px;
+}
+
+/* Apresentação principal */
+.inicio-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 3rem;
+  padding-block: clamp(2.5rem, 7vw, 6rem);
+}
+
+.inicio-hero h1 {
+  margin: 0 0 1.25rem;
+  color: #ffffff;
+  font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.inicio-hero h1 span {
+  display: block;
+  color: #b8f34a;
+}
+
+.inicio-hero p {
+  color: #aebaca;
+  line-height: 1.7;
+}
+
+.inicio-acoes {
+  margin-top: 1.5rem;
+}
+
+/* Cartão de comparação */
+.inicio-previa {
+  min-width: 0;
+  padding: clamp(1rem, 3vw, 1.75rem);
+  border: 1px solid #344150;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at top right, #b8f34a18, transparent 70%),
+    #151c25;
+}
+
+.inicio-previa h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.previa-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.previa-cabecalho > span {
+  color: #aebaca;
+  font-size: 0.75rem;
+}
+
+.previa-atletas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.previa-atletas > div {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.85rem;
+  border: 1px solid #344150;
+  border-radius: 12px;
+  background: #0d1117;
+}
+
+.previa-atletas > div:last-child {
+  text-align: right;
+}
+
+.previa-atletas strong {
+  color: #ffffff;
+}
+
+.previa-atletas div span {
+  color: #aebaca;
+  font-size: 0.75rem;
+}
+
+.previa-versus {
+  color: #b8f34a;
+  font-size: 1.5rem;
+}
+
+/* Tabela da prévia */
+.previa-tabela {
+  overflow-x: auto;
+}
+
+.inicio-previa table {
+  width: 100%;
+  margin-block: 1.25rem;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.inicio-previa caption {
+  margin-bottom: 0.75rem;
+  color: #aebaca;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.inicio-previa th,
+.inicio-previa td {
+  padding: 0.8rem 0.2rem;
+  border-bottom: 1px solid #293440;
+}
+
+.inicio-previa td {
+  color: #d9e2ec;
+  font-family: 'Rajdhani', system-ui, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.inicio-previa td.previa-maior {
+  color: #b8f34a;
+}
+
+.inicio-previa small {
+  display: block;
+  color: #aebaca;
+  line-height: 1.5;
+}
+
+/* Funcionalidades */
+.inicio-recursos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding-bottom: 3rem;
+}
+
+.inicio-recursos article {
+  padding: 1.25rem;
+  border: 1px solid #293440;
+  border-radius: 14px;
+  background: #151c25;
+}
+
+.inicio-radar .inicio-recursos h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.inicio-radar .inicio-recursos p {
+  margin-bottom: 0;
+  color: #ffffff;
+  line-height: 1.7;
+}
+
+/* Rodapé */
+.inicio-radar .inicio-footer {
+  padding-block: 1.25rem;
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+/* Login e cadastro */
+.acesso-publico {
+  min-height: 100vh;
+  background: #0d1117;
+}
+
+.acesso-publico .voltar-inicio {
+  margin: 1rem;
+}
+
+/* Telas menores */
+@media (max-width: 760px) {
+  .inicio-hero,
+  .inicio-recursos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inicio-hero {
+    gap: 2rem;
+  }
+}
+/* Navegação do cabeçalho */
+.inicio-header .inicio-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(1rem, 2vw, 2rem);
+}
+
+.inicio-menu a {
+  padding: 0.5rem 0;
+  color: #d9e2ec;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.inicio-menu a:hover {
+  color: #b8f34a;
+}
+
+.inicio-menu a:focus-visible {
+  outline: 2px solid #b8f34a;
+  outline-offset: 5px;
+  border-radius: 3px;
+}
+
+/* Aproxima a apresentação do cabeçalho */
+.inicio-radar .inicio-hero {
+  padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+
+/* Títulos */
+.inicio-radar .inicio-previa h2,
+.inicio-radar .inicio-explicacao h2,
+.inicio-radar .inicio-etapas h3,
+.inicio-radar .inicio-sobre h2 {
+  color: #ffffff;
+}
+
+/* Destinos do menu */
+.inicio-explicacao,
+.inicio-recursos,
+.inicio-sobre {
+  scroll-margin-top: 1rem;
+}
+
+.inicio-explicacao {
+  padding-block: 2rem;
+}
+
+.inicio-explicacao h2,
+.inicio-sobre h2 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+}
+
+/* Passos de uso */
+.inicio-etapas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.inicio-etapas li {
+  min-width: 0;
+  padding-left: 0.25rem;
+}
+
+.inicio-etapas li::marker {
+  color: #b8f34a;
+  font-weight: 700;
+}
+
+.inicio-etapas h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.inicio-etapas p,
+.inicio-sobre p {
+  color: #aebaca;
+  line-height: 1.7;
+}
+
+/* Apresentação do projeto */
+.inicio-sobre {
+  padding-block: 2rem;
+  border-top: 1px solid #293440;
+}
+
+.inicio-sobre p {
+  max-width: 800px;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .inicio-header {
+    justify-content: center;
+  }
+
+  .inicio-header .inicio-menu {
+    justify-content: center;
+  }
+
+  .inicio-etapas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,58 @@
+.plantel-pagina { color: #f0f4f8; }
+.plantel-pagina *, .plantel-pagina *::before, .plantel-pagina *::after { box-sizing: border-box; }
+.plantel-topo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1.5rem; padding: clamp(1.25rem, 3vw, 2rem); margin-bottom: 1.5rem; border: 1px solid #344438; border-radius: 18px; background: radial-gradient(ellipse at top right, #b8f34a20, transparent 65%), #151e20; }
+.plantel-pagina h1 { margin: 0; color: #fff; font-size: clamp(1.8rem, 3vw, 2.6rem); letter-spacing: -0.035em; }
+.plantel-topo p { color: #aebaca; margin: 0.65rem 0 0; line-height: 1.6; }
+.plantel-totais { display: flex; gap: 1rem; margin: 0; }
+.plantel-totais > div { display: flex; flex-direction: column-reverse; padding: 0.85rem 1.25rem; border-left: 2px solid #b8f34a66; }
+.plantel-totais dt { color: #aebaca; font-size: 0.8rem; }
+.plantel-totais dd { margin: 0; font-family: Rajdhani, sans-serif; font-weight: 700; color: #b8f34a; font-size: 2rem; }
+.plantel-formularios { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 1.25rem; margin-bottom: 1.5rem; }
+.plantel-painel { min-width: 0; padding: clamp(1rem, 2.5vw, 1.75rem); border: 1px solid #293440; border-radius: 16px; background: #151c25; }
+.plantel-pagina h2 { margin: 0; color: #fff; font-size: 1.15rem; }
+.plantel-secao-topo, .plantel-acoes, .plantel-atleta-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.plantel-secao-topo { margin-bottom: 1.25rem; }
+.plantel-simbolo { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #b8f34a44; background: #b8f34a0d; border-radius: 10px; color: #b8f34a; }
+.plantel-simbolo svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.plantel-pagina fieldset { display: grid; gap: 1rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.plantel-pagina label { display: grid; gap: 0.45rem; min-width: 0; color: #c5cfdb; font-size: 0.85rem; }
+.plantel-pagina :is(input, select) { width: 100%; min-width: 0; height: 46px; padding: 0.7rem 0.85rem; border: 1px solid #354252; border-radius: 9px; background: #0d1117; color: #fff; font: inherit; color-scheme: dark; }
+.plantel-pagina input::placeholder { color: #8d9aab; }
+.plantel-campos-linha { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 0.85rem; }
+.plantel-pagina button { min-height: 44px; padding: 0.7rem 1rem; border: 1px solid #3b4959; border-radius: 9px; color: #f0f4f8; background: #0d1117; cursor: pointer; font: inherit; font-weight: 600; }
+.plantel-pagina .plantel-principal { color: #152008; background: #b8f34a; border-color: #b8f34a; }
+.plantel-pagina .plantel-secundario { border-color: #b8f34a66; color: #b8f34a; }
+.plantel-pagina button:hover:not(:disabled) { border-color: #b8f34a; }
+.plantel-pagina :is(button, input, select):focus-visible { outline: 2px solid #b8f34a; outline-offset: 3px; }
+.plantel-pagina button:disabled { opacity: 0.6; cursor: default; }
+.plantel-acoes { justify-content: space-between; margin-bottom: 1.25rem; }
+.plantel-atletas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 1rem; }
+.plantel-atleta { min-width: 0; padding: 1.25rem; background: #0d1117; border: 1px solid #293440; border-radius: 12px; overflow-wrap: anywhere; }
+.plantel-atleta-topo { justify-content: space-between; }
+.plantel-avatar { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #7cbfff14; color: #7cbfff; font-weight: 700; font-size: 1.25rem; }
+.plantel-posicao { padding: 0.35rem 0.5rem; border: 1px solid #b8f34a33; border-radius: 6px; color: #b8f34a; font-size: 0.75rem; }
+.plantel-pagina .plantel-atleta h3 { margin: 1rem 0; color: #fff; font-size: 1.1rem; }
+.plantel-atleta dl { display: grid; gap: 0.65rem; margin: 0; }
+.plantel-atleta dl > div { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 0.5rem; }
+.plantel-atleta dt { color: #8d9aab; font-size: 0.8rem; }
+.plantel-atleta dd { margin: 0; color: #c5cfdb; font-size: 0.85rem; }
+.plantel-aviso { padding: 1rem; border: 1px solid #3b4959; border-radius: 10px; color: #b8f34a; }
+.plantel-erro { color: #ffb4bf; }
+.plantel-vazio { padding: 2rem 0; color: #aebaca; }
+@media (max-width: 760px) { .plantel-formularios { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 380px) { .plantel-campos-linha { grid-template-columns: minmax(0, 1fr); } }
+
+.plantel-pagina { width: 100%; max-width: none; margin: 0; }
+.plantel-campos-duplos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
+.plantel-pagina textarea { width: 100%; padding: 0.7rem; border: 1px solid #354252; border-radius: 9px; background: #0d1117; color: #fff; font: inherit; resize: vertical; }
+.plantel-pagina textarea:focus-visible { outline: 2px solid #b8f34a; outline-offset: 3px; }
+.plantel-pagina input:disabled { opacity: 0.5; }
+.plantel-ficha { margin-bottom: 1rem; }
+.plantel-ficha summary { cursor: pointer; color: #b8f34a; margin-bottom: 0.75rem; }
+.plantel-ficha dl > div { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.plantel-ficha p { white-space: pre-wrap; color: #c5cfdb; }
+@media(max-width: 480px) { .plantel-campos-duplos { grid-template-columns: minmax(0, 1fr); } }
+
+.plantel-pagina .plantel-topo h1 {
+  text-transform: uppercase;
+}

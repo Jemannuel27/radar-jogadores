@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 import './AuthPage.css';
+import radarLogo from '../assets/radar-logo.png';
 
-export function AuthPage({ onLoginSuccess }) {
-  const [isLogin, setIsLogin] = useState(true);
+export function AuthPage({ onLoginSuccess, initialIsLogin = true }) {
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -71,8 +72,11 @@ export function AuthPage({ onLoginSuccess }) {
     <div className="auth-wrapper">
       <div className="auth-card">
         <div className="auth-header">
-          <span className="auth-logo">⚽</span>
-          <h2>RADAR DE JOGADORES</h2>
+          <img
+  className="auth-brand-image"
+  src={radarLogo}
+  alt="Radar Scout"
+/>
           <p>
             {isLogin
               ? 'Acesse o painel de gerenciamento'

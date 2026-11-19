@@ -241,7 +241,32 @@ useEffect(() => {
       {/* Painel de Filtros Avançados */}
       <div className="card-section filter-section">
         <div className="filter-header">
-          <h3>🔍 FILTROS ANALÍTICOS</h3>
+          <h3 style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.65rem',
+  color: '#ffffff'
+}}>
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    style={{ flexShrink: 0, color: '#b8f34a' }}
+  >
+    <path d="M3 6h4m4 0h10M3 12h10m4 0h4M3 18h6m4 0h8" />
+    <circle cx="9" cy="6" r="2" />
+    <circle cx="15" cy="12" r="2" />
+    <circle cx="11" cy="18" r="2" />
+  </svg>
+  FILTROS ANALÍTICOS
+</h3>
           <button className="btn-link" onClick={limparFiltros}>LIMPAR FILTROS</button>
         </div>
         <div className="filter-grid">

@@ -59,9 +59,10 @@
 
 .partidas-container .stat-card h2,
 .partidas-container .score-cell {
-  font-family: Rajdhani, system-ui, sans-serif;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+  text-align: center;
+  font-size: 1.4rem;
+  white-space: nowrap;
 }
 
 .partidas-container .stat-card h2 {
@@ -223,4 +224,18 @@
   .partidas-container .fut-form {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.partidas-container .partidas-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #ffffff;
+}
+
+.partidas-container .partidas-titulo svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--partidas-verde);
 }

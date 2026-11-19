@@ -19,8 +19,11 @@
 
 .relatorios-container .relatorios-banner {
   background:
-    radial-gradient(ellipse at top right, #b8f34a28, transparent 65%),
-    repeating-linear-gradient(90deg, transparent 0 39px, #ffffff09 39px 40px),
+    radial-gradient(
+      ellipse at top right,
+      #b8f34a28,
+      transparent 65%
+    ),
     #131d1c;
 }
 
@@ -113,3 +116,120 @@
 }
 
 .relatorios-container [role='alert'] { color: #ff9caa; }
+
+.relatorios-container .hero-banner {
+  background: radial-gradient(
+    ellipse at top right,
+    #b8f34a26,
+    transparent 65%
+  ), #131d1c !important;
+}
+
+.relatorios-container .hero-banner::before,
+.relatorios-container .hero-banner::after {
+  display: none !important;
+}
+
+/* Títulos */
+.relatorios-container .relatorios-painel h2 {
+  margin: 0 0 1.25rem;
+  color: #ffffff;
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  line-height: 1.3;
+}
+
+/* Aviso sobre dados simulados */
+.relatorios-container .relatorios-aviso {
+  margin: 0 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid #ffda8433;
+  border-left: 3px solid #ffda84;
+  border-radius: 10px;
+  background: #ffda8408;
+  line-height: 1.6;
+}
+
+/* Seleção de atletas e botão */
+.relatorios-container .generator-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1rem;
+}
+
+.relatorios-container .generator-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.relatorios-container .generator-grid select {
+  height: 3rem;
+  margin: 0;
+  padding-inline: 0.9rem;
+}
+
+.relatorios-container .relatorios-gerar {
+  min-height: 3rem;
+  padding-inline: 1.5rem;
+}
+
+/* Histórico */
+.relatorios-container .historico-list {
+  gap: 1.25rem;
+}
+
+.relatorios-container .historico-card {
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border-radius: 14px;
+}
+
+.relatorios-container .historico-header {
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rel-border);
+}
+
+.relatorios-container .historico-card h3,
+.relatorios-container .historico-card h4 {
+  margin: 1.25rem 0;
+  color: #ffffff;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.relatorios-container .report-body {
+  margin: 0;
+  padding-block: 0.25rem 1.25rem;
+  color: #f0f4f8;
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+.relatorios-container .historico-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rel-border);
+}
+
+/* Celular */
+@media (max-width: 760px) {
+  .relatorios-container .generator-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .relatorios-container .relatorios-gerar {
+    width: 100%;
+  }
+
+  .relatorios-container .historico-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

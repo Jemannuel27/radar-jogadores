@@ -2,6 +2,48 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
 import './ComparacaoPage.css';
 
+function TabelaIndicadores({ jogadores }) {
+  const grupos = [
+    { nome: 'Ataque', itens: [['Gols', 'gols'], ['Finalizações', 'finalizacoes'], ['Dribles completos / tentados', 'driblesCompletos', 'driblesTentados']] },
+    { nome: 'Passe', itens: [['Passes completos / tentados', 'passesCompletos', 'passesTentados']] },
+    { nome: 'Defesa', itens: [['Desarmes ganhos / tentados', 'desarmesGanhos', 'desarmesTentados'], ['Interceptações registradas', 'interceptacoes']] },
+  ];
+
+  return (
+    <div className="comparacao-grupos">
+      {grupos.map((grupo) => (
+        <section key={grupo.nome}>
+          <h4>{grupo.nome}</h4>
+          <div className="comparacao-tabela-scroll">
+            <table className="comparacao-tabela">
+              <thead><tr>
+                <th scope="col">Indicador</th>
+                {jogadores.map((jogador) => <th scope="col" key={jogador.id}>{jogador.nome}</th>)}
+              </tr></thead>
+              <tbody>
+                {grupo.itens.map(([rotulo, campo, total]) => (
+                  <tr key={campo}>
+                    <th scope="row">{rotulo}</th>
+                    {jogadores.map((jogador) => <td key={jogador.id}><MetricasAtleta atleta={jogador} campo={campo} total={total} /></td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function MetricasAtleta({ atleta, campo, total }) {
+  if (!atleta.entrouEmCampo) return '—';
+  const valor = atleta[campo];
+  if (valor == null) return 'Indisponível';
+  if (!total) return valor;
+  return `${valor} / ${atleta[total] ?? 'Indisponível'}`;
+}
+
 function BuscaAtleta({ rotulo, atleta, selecionar, bloqueada, partidaId }) {
   const [nome, setNome] = useState('');
   const [opcoes, setOpcoes] = useState([]);
@@ -232,27 +274,13 @@ function ComparacaoGlobal() {
       {resultado && (
         <>
           <p>Fonte: {resultado.fonte}. Disputas de pênaltis excluídas.</p>
+          <div className="comparacao-recortes">
+            {resultado.jogadores.map((jogador, indice) => (
+              <p key={jogador.id}><strong>{jogador.nome}</strong> · {rotuloPartida(dupla[indice].partida)}</p>
+            ))}
+          </div>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', textAlign: 'left' }}>
-              <thead>
-                <tr>
-                  <th scope="col">Atleta</th>
-                  <th scope="col">Partida</th>
-                  <th scope="col">Finalizações</th>
-                  <th scope="col">Gols</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resultado.jogadores.map((atleta, indice) => (
-                  <tr key={atleta.id}>
-                    <th scope="row">{atleta.nome} · {atleta.equipe}</th>
-                    <td>{rotuloPartida(dupla[indice].partida)}</td>
-                    <td>{atleta.entrouEmCampo ? atleta.finalizacoes : '—'}</td>
-                    <td>{atleta.entrouEmCampo ? atleta.gols : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <TabelaIndicadores jogadores={resultado.jogadores} />
           </div>
           {resultado.jogadores.some((atleta) => !atleta.entrouEmCampo) && (
             <p>O traço indica que o atleta não entrou em campo.</p>
@@ -373,26 +401,7 @@ function ComparacaoPartida({ partidaId }) {
         <>
           <p>Fonte: {resultado.fonte} · Partida {resultado.partidaId}</p>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', textAlign: 'left' }}>
-              <thead>
-                <tr>
-                  <th scope="col">Jogador</th>
-                  <th scope="col">Seleção</th>
-                  <th scope="col">Finalizações</th>
-                  <th scope="col">Gols</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resultado.jogadores.map((atleta) => (
-                  <tr key={atleta.id}>
-                    <th scope="row">{atleta.nome}</th>
-                    <td>{atleta.equipe}</td>
-                    <td>{atleta.entrouEmCampo ? atleta.finalizacoes : '—'}</td>
-                    <td>{atleta.entrouEmCampo ? atleta.gols : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <TabelaIndicadores jogadores={resultado.jogadores} />
           </div>
           {resultado.jogadores.some((atleta) => !atleta.entrouEmCampo) && (
             <p>O traço indica que o atleta não entrou em campo.</p>
@@ -493,6 +502,7 @@ function ComparacaoFinal2022() {
 }
 
 export function ComparacaoPage() {
+  const [modo, setModo] = useState('reais');
   const [jogadores, setJogadores] = useState([]);
   const [jogadorAId, setJogadorAId] = useState('');
   const [jogadorBId, setJogadorBId] = useState('');
@@ -619,16 +629,26 @@ export function ComparacaoPage() {
       <div className="hero-banner">
         <div className="banner-content">
     
-          <h1 style={{ color: '#ffffff' }}>HEAD TO HEAD / COMPARAÇÃO</h1>
-          <p>Confronto estatístico direto entre dois atletas do plantel com síntese tática via IA.</p>
+          <h1 style={{ color: '#ffffff' }}>Comparar atletas</h1>
+          <p>Escolha os jogadores e os jogos para explorar os indicadores e gerar um relatório estatístico.</p>
         </div>
       </div>
 
       {erro && <div className="error-badge">{erro}</div>}
 
       {/* Seleção dos Atletas */}
-      <ComparacaoGlobal />
-      <ComparacaoFinal2022 />
+      <div className="comparacao-modos" aria-label="Origem dos jogadores">
+        <button type="button" aria-pressed={modo === 'reais'} onClick={() => setModo('reais')}>Jogadores reais</button>
+        <button type="button" aria-pressed={modo === 'plantel'} onClick={() => setModo('plantel')}>Meu plantel</button>
+      </div>
+      <div hidden={modo !== 'reais'}>
+        <ComparacaoGlobal />
+        <details className="comparacao-explorar">
+          <summary>Explorar por competição</summary>
+          <ComparacaoFinal2022 />
+        </details>
+      </div>
+      <div hidden={modo !== 'plantel'}>
 
       <div className="card-section selectors-card">
         <h3>⚔️ SELECIONE OS ATLETAS</h3>
@@ -790,6 +810,7 @@ export function ComparacaoPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -290,3 +290,21 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Números e títulos dos cartões em branco */
+.dashboard-container .kpi-grid .kpi-card h2,
+.dashboard-container .kpi-grid .kpi-card > span {
+  color: #ffffff;
+}
+
+.dashboard-container .radar-section-heading h2 {
+  color: #ffffff;
+}
+
+.dashboard-container .hero-banner {
+  background: radial-gradient(
+    ellipse at top right,
+    #b8f34a26,
+    transparent 65%
+  ), #131d1c;
+}

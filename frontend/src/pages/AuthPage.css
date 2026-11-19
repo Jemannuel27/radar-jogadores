@@ -121,3 +121,22 @@
   cursor: pointer;
   text-decoration: underline;
 }
+.auth-brand-image {
+  display: block;
+  width: min(100%, 340px);
+  height: auto;
+  margin: 0 auto 1rem;
+}
+
+.auth-wrapper .auth-submit-btn {
+  background-color: #b8f34a;
+  color: #101608;
+}
+
+.auth-wrapper .auth-submit-btn:hover:not(:disabled) {
+  background-color: #cdfa80;
+}
+
+.auth-wrapper .auth-switch-btn {
+  color: #b8f34a;
+}

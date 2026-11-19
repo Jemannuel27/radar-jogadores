@@ -181,7 +181,16 @@ export function PartidasPage() {
 
       {/* Formulário de Cadastro */}
       <div className="card-section">
-        <h3>⚽ {editId ? 'EDITAR CONFRONTO' : 'CADASTRAR PARTIDA'}</h3>
+        <h3 className="partidas-titulo" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#ffffff' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+            aria-hidden="true" focusable="false"
+            style={{ flexShrink: 0, color: 'var(--partidas-verde, #b8f34a)' }}>
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M16 3v4M8 3v4M3 11h18M12 14v4M10 16h4" />
+          </svg>
+          {editId ? 'EDITAR CONFRONTO' : 'CADASTRAR PARTIDA'}
+        </h3>
         <form onSubmit={handleSubmit} className="fut-form">
           <div className="form-group">
             <label>Equipe</label>
@@ -252,7 +261,18 @@ export function PartidasPage() {
       {/* Seção de Filtros Avançados */}
       <div className="card-section filter-section">
         <div className="filter-header">
-          <h3>🔍 FILTROS E PESQUISA</h3>
+          <h3 className="partidas-titulo" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#ffffff' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+            aria-hidden="true" focusable="false"
+            style={{ flexShrink: 0, color: 'var(--partidas-verde, #b8f34a)' }}>
+              <path d="M3 6h4m4 0h10M3 12h10m4 0h4M3 18h6m4 0h8" />
+              <circle cx="9" cy="6" r="2" />
+              <circle cx="15" cy="12" r="2" />
+              <circle cx="11" cy="18" r="2" />
+            </svg>
+            FILTROS E PESQUISA
+          </h3>
           <button type="button" className="btn-link" onClick={limparFiltros}>LIMPAR FILTROS</button>
         </div>
         <div className="filter-grid">
